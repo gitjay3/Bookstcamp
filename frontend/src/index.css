@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @theme {
+  /* Common Colors - 모든 기능에서 공통으로 사용 */
+  --color-primary: #005CFD;
+  --color-secondary: #F0F4FA;
+
   /* Common Spacing - 모든 기능에서 공통으로 사용 */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
