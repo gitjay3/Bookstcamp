@@ -36,6 +36,7 @@ export default function ReservationPage() {
   const [slotCapacities, setSlotCapacities] = useState<
     Map<number, { currentCount: number; maxCapacity: number }>
   >(new Map());
+  const [capacityVersion, setCapacityVersion] = useState(0);
 
   const handleSSEMessage = useCallback((event: CapacityUpdateEvent) => {
     // eslint-disable-next-line no-console
@@ -55,6 +56,7 @@ export default function ReservationPage() {
 
       return snapshotMap;
     });
+    setCapacityVersion((v) => v + 1);
     setHasSnapshot(true);
   }, []);
 
@@ -93,6 +95,7 @@ export default function ReservationPage() {
           });
         });
         setSlotCapacities(initialMap);
+        setCapacityVersion((v) => v + 1);
         setHasSnapshot(true);
       } catch (error) {
         console.error("슬롯 정보를 불러오지 못했습니다.", error);
@@ -127,7 +130,7 @@ export default function ReservationPage() {
         status: isFull ? "disabled" : "available",
       };
     });
-  }, [hasSnapshot, slotBaseInfo, slotCapacities]);
+  }, [hasSnapshot, slotBaseInfo, slotCapacities, capacityVersion]);
 
   const handleSlotClick = (slot: SlotItem) => {
     const isReserved = slot.id === reservedSlotId;
