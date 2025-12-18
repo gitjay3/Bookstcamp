@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Subject, Observable, concat, of } from 'rxjs';
 import { CreateReservationDto } from './dto/create-reservation.dto';
+import { CancelReservationDto } from './dto/cancel-reservation.dto';
 import { ReservationResponseDto } from './dto/reservation-response.dto';
 import { UpdateSlotCapacityDto } from './dto/update-slot-capacity.dto';
 import type { Event } from './interfaces/event.interface';
@@ -323,6 +324,43 @@ export class ReservationsService {
         ? '예약이 수정되었습니다.'
         : RESERVATION_SUCCESS_MESSAGES.RESERVATION_CREATED,
       reservationId,
+    };
+  }
+
+  async cancelReservation(
+    cancelReservationDto: CancelReservationDto,
+  ): Promise<ReservationResponseDto> {
+    const { userId, eventId } = cancelReservationDto;
+
+    const existingReservation = this.findUserReservation(userId, eventId);
+
+    if (!existingReservation) {
+      return {
+        success: false,
+        message: '예약 내역이 없습니다.',
+      };
+    }
+
+    this.reservations.delete(existingReservation.reservationId);
+
+    const slotCapacity = this.slotCapacities.get(existingReservation.slotId);
+    if (slotCapacity) {
+      slotCapacity.currentCount = Math.max(0, slotCapacity.currentCount - 1);
+    }
+
+    const event = this.findEventById(eventId);
+    if (event) {
+      event.metadata.reservedCount = Math.max(
+        0,
+        event.metadata.reservedCount - 1,
+      );
+    }
+
+    this.emitCapacityUpdate(existingReservation.slotId, eventId);
+
+    return {
+      success: true,
+      message: '예약이 취소되었습니다.',
     };
   }
 

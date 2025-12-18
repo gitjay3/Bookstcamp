@@ -33,6 +33,30 @@ export function useReservation() {
     }
   };
 
+  const cancelReservation = async (request: {
+    userId: string;
+    eventId: string;
+  }) => {
+    setIsLoading(true);
+    try {
+      const response = await reservationApi.cancelReservation(request);
+
+      if (response.success) {
+        toast.success(response.message);
+        return { success: true };
+      } else {
+        toast.error(response.message);
+        return { success: false };
+      }
+    } catch (error) {
+      console.error("Cancellation error:", error);
+      toast.error("예약 취소 중 오류가 발생했습니다.");
+      return { success: false };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleErrorMessage = (message: string) => {
     switch (message) {
       case "존재하지 않는 이벤트입니다.": // 이거 나중에 dto 확정나면message가 아니라 다른걸로 -> 에러 메세지같은(EVENT_NOT_FOUND)
@@ -62,6 +86,7 @@ export function useReservation() {
 
   return {
     createReservation,
+    cancelReservation,
     isLoading,
   };
 }

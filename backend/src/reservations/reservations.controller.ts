@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   MessageEvent,
   Param,
@@ -15,6 +16,7 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { ReservationResponseDto } from './dto/reservation-response.dto';
 import { UpdateSlotCapacityDto } from './dto/update-slot-capacity.dto';
 import { EventListItemDto } from './dto/event-list-response.dto';
+import { CancelReservationDto } from './dto/cancel-reservation.dto';
 
 @Controller('reservations')
 export class ReservationsController {
@@ -31,6 +33,15 @@ export class ReservationsController {
   ): Promise<ReservationResponseDto> {
     return await this.reservationsService.createReservation(
       createReservationDto,
+    );
+  }
+
+  @Delete()
+  async cancelReservation(
+    @Body() cancelReservationDto: CancelReservationDto,
+  ): Promise<ReservationResponseDto> {
+    return await this.reservationsService.cancelReservation(
+      cancelReservationDto,
     );
   }
 

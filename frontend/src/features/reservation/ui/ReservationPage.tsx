@@ -25,11 +25,13 @@ type SlotItem = {
 export default function ReservationPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const resolvedEventId = eventId ?? "event-1";
-  const { createReservation, isLoading } = useReservation();
+  const { createReservation, cancelReservation, isLoading } = useReservation();
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
   const [reservedSlotId, setReservedSlotId] = useState<number | null>(null);
   const [hasSnapshot, setHasSnapshot] = useState(false);
-  const [slotBaseInfo, setSlotBaseInfo] = useState<Omit<SlotItem, "rightLabel" | "status">[]>([]);
+  const [slotBaseInfo, setSlotBaseInfo] = useState<
+    Omit<SlotItem, "rightLabel" | "status">[]
+  >([]);
   const [clientId] = useState(() => getClientId());
 
   // 슬롯별 정원 정보를 실시간으로 관리
@@ -39,7 +41,6 @@ export default function ReservationPage() {
   const [capacityVersion, setCapacityVersion] = useState(0);
 
   const handleSSEMessage = useCallback((event: CapacityUpdateEvent) => {
-    // eslint-disable-next-line no-console
     console.log("[SSE] Received capacity snapshot", event);
     setSlotCapacities(() => {
       const snapshotMap = new Map<
@@ -154,10 +155,19 @@ export default function ReservationPage() {
     }
   };
 
-  const handleCancel = () => {
-    toast.info("예약 취소 기능은 아직 준비 중입니다.");
-  };
+  const handleCancel = async () => {
+    if (!reservedSlotId || !eventId) return;
 
+    const result = await cancelReservation({
+      userId: clientId,
+      eventId: resolvedEventId,
+    });
+
+    if (result.success) {
+      setReservedSlotId(null);
+      // SSE가 자동으로 정원 업데이트를 알려줌
+    }
+  };
   return (
     <ReservationLayout>
       <PageHeader
