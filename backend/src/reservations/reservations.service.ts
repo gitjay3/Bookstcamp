@@ -188,6 +188,37 @@ export class ReservationsService {
     return null;
   }
 
+  /**
+   * 이벤트 ID를 유연하게 찾아서 반환
+   * - 클라이언트가 숫자 ID(목록용 해시 값)로 요청해도 매핑되도록 처리
+   */
+  private findEventById(eventId: string): Event | undefined {
+    const direct = this.events.get(eventId);
+    if (direct) return direct;
+
+    const numericId = Number(eventId);
+    if (Number.isNaN(numericId)) return undefined;
+
+    for (const event of this.events.values()) {
+      if (this.convertIdToNumber(event.id) === numericId) {
+        return event;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Event ID를 숫자로 해싱 (프론트 리스트 ID 생성 로직과 동일)
+   */
+  private convertIdToNumber(id: string): number {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = (hash << 5) - hash + id.charCodeAt(i);
+      hash = hash & hash; // 32bit 정수 변환
+    }
+    return Math.abs(hash);
+  }
+
   // eslint-disable-next-line @typescript-eslint/require-await
   async createReservation(
     //캠퍼가 예약 신청
@@ -195,7 +226,7 @@ export class ReservationsService {
   ): Promise<ReservationResponseDto> {
     const { eventId, userId, slotId } = createReservationDto;
 
-    const event = this.events.get(eventId);
+    const event = this.findEventById(eventId);
     if (!event) {
       return {
         success: false,
@@ -248,7 +279,7 @@ export class ReservationsService {
       };
     }
 
-    let reservationId = existingReservation?.reservationId;
+    let reservationId: string;
     const isNewReservation = !existingReservation;
 
     // 기존 예약이 있으면 이전 슬롯 정원 감소
@@ -259,9 +290,10 @@ export class ReservationsService {
           0,
           previousSlotCapacity.currentCount - 1,
         );
-        this.emitCapacityUpdate(previousSlotId, eventId);
+        this.emitCapacityUpdate(previousSlotId, event.id);
       }
       // 기존 예약 업데이트
+      reservationId = existingReservation.reservationId;
       const reservation = this.reservations.get(reservationId);
       if (reservation) {
         reservation.slotId = slotId;
@@ -283,7 +315,7 @@ export class ReservationsService {
     if (isNewReservation) {
       event.metadata.reservedCount++;
     }
-    this.emitCapacityUpdate(slotId, eventId);
+    this.emitCapacityUpdate(slotId, event.id);
 
     return {
       success: true,

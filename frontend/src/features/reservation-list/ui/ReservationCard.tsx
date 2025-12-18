@@ -1,11 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import type { Reservation } from "../types/reservation.types";
+import { ICONS } from "../../../constants/icons.constants";
+import Badge from "../../../components/Badge";
+import Tag from "../../../components/Tag";
 import { formatDateRange } from "../../../utils/formatDate";
-import Badge from '../../../components/Badge';
-import Tag from '../../../components/Tag';
-import { STATUS_LABELS, PLATFORM_LABELS } from '../../../utils/reservationConstants';
-import { formatDateRange } from '../../../utils/formatDate';
-import { ICONS } from '../../../constants/icons.constants';
+import { STATUS_LABELS, PLATFORM_LABELS } from "../../../utils/reservationConstants";
+import type { Reservation } from "../types/reservation.types";
 
 interface ReservationCardProps {
   reservation: Reservation;
