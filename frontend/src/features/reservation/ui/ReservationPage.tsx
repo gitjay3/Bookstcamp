@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "./PageHeader";
 import { ReservationLayout } from "./ReservationLayout";
@@ -24,6 +24,7 @@ type SlotItem = {
 
 export default function ReservationPage() {
   const { eventId } = useParams<{ eventId: string }>();
+  const navigate = useNavigate();
   const resolvedEventId = eventId ?? "event-1";
   const { createReservation, cancelReservation, isLoading } = useReservation();
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
@@ -173,6 +174,8 @@ export default function ReservationPage() {
     <ReservationLayout>
       <PageHeader
         brandLabel="bookstcamp 10기 멤버십"
+        leftActionLabel="이벤트 생성"
+        onLeftActionClick={() => navigate('/create-event')}
         actionLabel="로그인"
         onActionClick={() => {}}
       />
