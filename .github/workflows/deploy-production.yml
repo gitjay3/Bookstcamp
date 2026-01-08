@@ -117,7 +117,7 @@ jobs:
           NCP_REGISTRY_USERNAME=${{ secrets.NCP_REGISTRY_USERNAME }}
           NCP_REGISTRY_PASSWORD=${{ secrets.NCP_REGISTRY_PASSWORD }}
           IMAGE_TAG=${{ env.IMAGE_TAG }}
-          DOTENVX_PRIVATE_KEY=${{ secrets.DOTENVX_PRIVATE_KEY_PRODUCTION }}
+          DOTENV_PRIVATE_KEY_PRODUCTION=${{ secrets.DOTENVX_PRIVATE_KEY_PRODUCTION }}
           EOF
           chmod 600 /tmp/deploy.env
 
