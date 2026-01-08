@@ -1,0 +1,228 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (optional, default: production-{SHA})'
+        required: false
+        type: string
+
+# Production 배포는 한 번에 하나씩만
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ${{ secrets.NCP_CONTAINER_REGISTRY_URL }}
+  IMAGE_TAG: ${{ inputs.image_tag || format('production-{0}', github.sha) }}
+
+jobs:
+  # Docker 이미지 빌드 및 푸시
+  build-and-push:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    environment:
+      name: production-build
+      url: ${{ secrets.NCP_CONTAINER_REGISTRY_URL }}
+
+    strategy:
+      matrix:
+        service:
+          - backend
+          - frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to NCP Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.NCP_CONTAINER_REGISTRY_URL }}
+          username: ${{ secrets.NCP_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.NCP_CONTAINER_REGISTRY_PASSWORD }}
+
+      - name: Extract version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Build and push ${{ matrix.service }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/bookstcamp-${{ matrix.service }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/bookstcamp-${{ matrix.service }}:production-latest
+            ${{ env.REGISTRY }}/bookstcamp-${{ matrix.service }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Image built successfully
+        run: |
+          echo "✅ ${{ matrix.service }} image built and pushed"
+          echo "Tags:"
+          echo "  - ${{ env.IMAGE_TAG }}"
+          echo "  - production-latest"
+          echo "  - ${{ steps.version.outputs.version }}"
+
+  # Production 배포 (수동 승인 필요)
+  deploy:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment:
+      name: production
+      url: http://${{ secrets.PRODUCTION_SERVER_HOST }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.PRODUCTION_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Backup current deployment
+        run: |
+          ssh ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }} << 'EOF'
+            set -e
+            cd ~/bookstcamp
+
+            # 현재 실행 중인 컨테이너 정보 백업
+            mkdir -p backups
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            docker compose -f docker-compose.yml ps > backups/pre-deploy-containers-${TIMESTAMP}.txt || true
+            docker compose -f docker-compose.yml images > backups/pre-deploy-images-${TIMESTAMP}.txt || true
+
+            echo "Backup completed: ${TIMESTAMP}"
+          EOF
+
+      - name: Create temporary env file
+        run: |
+          cat > /tmp/deploy.env << 'EOF'
+          ENVIRONMENT=production
+          NCP_REGISTRY_URL=${{ secrets.NCP_CONTAINER_REGISTRY_URL }}
+          NCP_REGISTRY_USERNAME=${{ secrets.NCP_CONTAINER_REGISTRY_USERNAME }}
+          NCP_REGISTRY_PASSWORD=${{ secrets.NCP_CONTAINER_REGISTRY_PASSWORD }}
+          IMAGE_TAG=${{ env.IMAGE_TAG }}
+          DOTENVX_PRIVATE_KEY=${{ secrets.DOTENVX_PRIVATE_KEY_PRODUCTION }}
+          EOF
+          chmod 600 /tmp/deploy.env
+
+      - name: Copy deployment files to server
+        run: |
+          scp -r scripts/ ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }}:~/bookstcamp/
+          scp docker-compose.yml ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }}:~/bookstcamp/docker-compose.yml
+          scp .env.production ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }}:~/bookstcamp/.env.production
+          scp /tmp/deploy.env ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }}:~/bookstcamp/.deploy.env
+          rm /tmp/deploy.env
+
+      - name: Deploy on production server
+        run: |
+          ssh ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }} << 'EOF'
+            set -e
+            cd ~/bookstcamp
+
+            # 환경변수 로드
+            set -a
+            source .deploy.env
+            set +a
+
+            # 보안: 즉시 삭제
+            rm -f .deploy.env
+
+            # 배포 스크립트 실행
+            chmod +x scripts/*.sh
+            ./scripts/deploy.sh prod
+          EOF
+
+      - name: Verify deployment (strict)
+        run: |
+          ssh ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }} << 'EOF'
+            cd ~/bookstcamp
+
+            # Production은 더 엄격하게 검증 (10회 재시도)
+            ./scripts/health-check.sh prod 10
+
+            echo "Waiting 30 seconds for services to stabilize..."
+            sleep 30
+
+            # 한 번 더 검증
+            ./scripts/health-check.sh prod 3
+          EOF
+
+      - name: Post-deployment monitoring
+        run: |
+          ssh ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }} << 'EOF'
+            cd ~/bookstcamp
+
+            echo "=== Deployment Summary ==="
+            echo "Deployed at: $(date)"
+            echo ""
+            echo "=== Running Containers ==="
+            docker compose -f docker-compose.yml ps
+            echo ""
+            echo "=== Container Resource Usage ==="
+            docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" $(docker compose -f docker-compose.yml ps -q)
+          EOF
+          echo ""
+          echo "Image tag: ${{ env.IMAGE_TAG }}"
+
+      - name: Deployment successful
+        run: |
+          echo "✅ Production deployment completed successfully!"
+          echo "Image tag: ${{ env.IMAGE_TAG }}"
+          echo "Deployed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+
+  # 배포 실패 시 자동 롤백
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.PRODUCTION_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Execute rollback
+        run: |
+          ssh ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }} << 'EOF'
+            set -e
+            cd ~/bookstcamp
+
+            echo "🔄 Executing automatic rollback..."
+            ./scripts/rollback.sh prod
+
+            echo "Waiting for services to stabilize..."
+            sleep 20
+
+            echo "Verifying rollback..."
+            ./scripts/health-check.sh prod 5
+          EOF
+
+      - name: Rollback completed
+        run: |
+          echo "⚠️ Production deployment failed and was rolled back"
+          echo "Please check the logs and fix the issue before redeploying"
+          echo "🔍 Investigate: ssh ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }} 'cd ~/bookstcamp && docker compose -f docker-compose.yml logs'"
