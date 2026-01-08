@@ -165,13 +165,27 @@ else
     log_info "기존 DATABASE_URL 환경변수 사용"
 fi
 
+# DATABASE_URL 길이 확인 (디버깅)
+DB_URL_LENGTH=${#DATABASE_URL}
+log_info "DATABASE_URL 길이: $DB_URL_LENGTH characters"
+
 # Backend 컨테이너가 실행 중인지 확인
 if docker compose -f "$COMPOSE_FILE" ps backend | grep -q "Up"; then
     log_info "기존 backend 컨테이너에서 마이그레이션 실행"
     docker compose -f "$COMPOSE_FILE" exec -T backend npx prisma migrate deploy
 else
     log_warn "실행 중인 backend 컨테이너가 없습니다. 새 컨테이너로 마이그레이션 실행"
-    docker compose -f "$COMPOSE_FILE" run --rm -e DATABASE_URL="$DATABASE_URL" backend npx prisma migrate deploy
+
+    # 임시 환경 파일 생성
+    TEMP_ENV_FILE="$PROJECT_ROOT/.env.migration.tmp"
+    echo "DATABASE_URL=$DATABASE_URL" > "$TEMP_ENV_FILE"
+    chmod 600 "$TEMP_ENV_FILE"
+
+    # 환경 파일을 사용하여 마이그레이션 실행
+    docker compose -f "$COMPOSE_FILE" run --rm --env-file "$TEMP_ENV_FILE" backend npx prisma migrate deploy
+
+    # 임시 파일 삭제
+    rm -f "$TEMP_ENV_FILE"
 fi
 
 if [ $? -ne 0 ]; then
