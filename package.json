@@ -9,17 +9,25 @@
     "dev:frontend": "cd frontend && pnpm dev",
     "dev:backend": "cd backend && pnpm start:dev",
     "dev": "pnpm run dev:frontend & pnpm run dev:backend",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
     "lint": "pnpm run lint:frontend && pnpm run lint:backend",
     "lint:frontend": "cd frontend && pnpm lint",
-    "lint:backend": "cd backend && pnpm lint"
+    "lint:backend": "cd backend && pnpm lint",
+    "dotenvx": "dotenvx",
+    "env:encrypt:dev": "dotenvx encrypt -f .env.development",
+    "env:encrypt:prod": "dotenvx encrypt -f .env.production",
+    "env:decrypt:dev": "dotenvx decrypt --stdout -f .env.development",
+    "env:decrypt:prod": "dotenvx decrypt --stdout -f .env.production",
+    "docker:local:up": "dotenvx run -f .env.development -- docker compose --profile local up --build -d",
+    "docker:local:down": "docker compose --profile local down",
+    "docker:local:logs": "docker compose logs -f",
+    "docker:local:clean": "docker compose --profile local down -v"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.27.0",
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.51.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7"
   }
