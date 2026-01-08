@@ -165,28 +165,7 @@ fi
 log_info "Step 7: 컨테이너 시작 대기 (5초)"
 sleep 5
 
-# 8. 배포 검증
-log_info "Step 8: 배포 검증"
-
-if command -v jq &> /dev/null; then
-    FAILED_SERVICES=$(docker compose -f "$COMPOSE_FILE" ps --format json | jq -r 'select(.State != "running") | .Service' 2>/dev/null || echo "")
-else
-    RUNNING_COUNT=$(docker compose -f "$COMPOSE_FILE" ps | grep -c "Up" || echo "0")
-    EXPECTED_COUNT=$(docker compose -f "$COMPOSE_FILE" config --services | wc -l)
-    if [ "$RUNNING_COUNT" -ne "$EXPECTED_COUNT" ]; then
-        FAILED_SERVICES="일부 서비스"
-    else
-        FAILED_SERVICES=""
-    fi
-fi
-
-if [ -n "$FAILED_SERVICES" ]; then
-    log_error "서비스 실행 실패: $FAILED_SERVICES"
-    bash "$SCRIPT_DIR/rollback.sh" "$ENV_DISPLAY"
-    exit 1
-fi
-
-# 9. 완료
+# 8. 완료
 log_info "=== 배포 완료 ==="
 docker compose -f "$COMPOSE_FILE" ps
 

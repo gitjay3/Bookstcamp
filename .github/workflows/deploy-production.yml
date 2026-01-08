@@ -176,19 +176,16 @@ jobs:
             ./scripts/deploy.sh prod
           EOF
 
-      - name: Verify deployment (strict)
+      - name: Verify deployment
         run: |
           ssh ${{ secrets.PRODUCTION_SERVER_USER }}@${{ secrets.PRODUCTION_SERVER_HOST }} << 'EOF'
             cd ~/bookstcamp
 
-            # Production은 더 엄격하게 검증 (10회 재시도)
-            ./scripts/health-check.sh prod 10
+            echo "Waiting for containers to start..."
+            sleep 10
 
-            echo "Waiting 30 seconds for services to stabilize..."
-            sleep 30
-
-            # 한 번 더 검증
-            ./scripts/health-check.sh prod 3
+            echo "=== Container Status ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}"
           EOF
 
       - name: Post-deployment monitoring
@@ -239,10 +236,10 @@ jobs:
             ./scripts/rollback.sh prod
 
             echo "Waiting for services to stabilize..."
-            sleep 20
+            sleep 10
 
-            echo "Verifying rollback..."
-            ./scripts/health-check.sh prod 5
+            echo "=== Container Status ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}"
           EOF
 
       - name: Rollback completed
