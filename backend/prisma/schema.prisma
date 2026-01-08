@@ -1,4 +1,3 @@
-// 1. 초기 설정
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,10 +6,66 @@ datasource db {
   provider = "postgresql"
 }
 
-// 2. 권한 및 상태값 정의
-enum Role {
-  USER
-  ADMIN
+model Event {
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String?
+  slotSchema    Json
+  creatorUserId String
+  startTime     DateTime
+  endTime       DateTime
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  User          User        @relation(fields: [creatorUserId], references: [id])
+  EventSlot     EventSlot[]
+}
+
+model EventSlot {
+  id            Int           @id @default(autoincrement())
+  eventId       Int
+  maxCapacity   Int           @default(1)
+  currentCount  Int           @default(0)
+  extraInfo     Json
+  version       Int           @default(0)
+  slotStartTime DateTime?
+  slotEndTime   DateTime?
+  Event         Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  Reservation   Reservation[]
+
+  @@index([eventId])
+}
+
+model Reservation {
+  id                Int                @id @default(autoincrement())
+  userId            String
+  slotId            Int
+  status            ReservationStatus  @default(PENDING)
+  reservedAt        DateTime           @default(now())
+  EventSlot         EventSlot          @relation(fields: [slotId], references: [id])
+  User              User               @relation(fields: [userId], references: [id])
+  ReservationOutbox ReservationOutbox?
+}
+
+model ReservationOutbox {
+  id            Int         @id @default(autoincrement())
+  reservationId Int         @unique
+  payload       Json
+  status        String      @default("PENDING")
+  createdAt     DateTime    @default(now())
+  Reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id          String        @id
+  githubId    String        @unique
+  githubLogin String
+  name        String
+  role        Role          @default(USER)
+  accessToken String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  Event       Event[]
+  Reservation Reservation[]
 }
 
 enum ReservationStatus {
@@ -19,87 +74,7 @@ enum ReservationStatus {
   CANCELLED
 }
 
-// 3. 사용자 및 소셜 계정
-model User {
-  id             String          @id @default(uuid())
-  githubId       String          @unique
-  githubLogin    String
-  name           String
-  role           Role            @default(USER)
-  accessToken    String?  // OAuth access token (암호화 해야함)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  events         Event[]         // 운영자로서 생성한 이벤트들
-  reservations   Reservation[]   // 사용자로서 신청한 예약들
-}
-
-// 4. 이벤트 및 동적 슬롯
-model Event {
-  id            Int         @id @default(autoincrement())
-  title         String
-  description   String?     @db.Text
-
-  // 슬롯 커스텀 필드 (슬롯 구조)
-  slotSchema    Json        @db.JsonB
-  
-  creatorUserId String
-  creator       User        @relation(fields: [creatorUserId], references: [id])
-  
-  // 이벤트 전체 시작/종료 기간
-  startTime     DateTime
-  endTime       DateTime
-  
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  
-  slots         EventSlot[]
-}
-
-model EventSlot {
-  id            Int           @id @default(autoincrement())
-  eventId       Int
-  event         Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  
-  maxCapacity   Int           @default(1)
-  currentCount  Int           @default(0)
-  
-  // 슬롯별 실제 데이터
-  extraInfo     Json          @db.JsonB
-  
-  // 낙관적 락을
-  version       Int           @default(0)
-
-  // 슬롯 자체에 시간이 포함될 경우
-  slotStartTime DateTime?
-  slotEndTime   DateTime?
-
-  reservations  Reservation[]
-
-  @@index([eventId])
-}
-
-// 5. 예약 및 Outbox
-model Reservation {
-  id         Int               @id @default(autoincrement())
-  userId     String
-  user       User              @relation(fields: [userId], references: [id])
-  slotId     Int
-  slot       EventSlot         @relation(fields: [slotId], references: [id])
-  status     ReservationStatus @default(PENDING)
-  reservedAt DateTime          @default(now())
-  
-  outbox     ReservationOutbox?
-}
-
-// Outbox는 필수 요소 모두 구현 뒤 확장하는게 좋아보임
-model ReservationOutbox {
-  id            Int         @id @default(autoincrement())
-  reservationId Int         @unique
-  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  
-  // 메시지 큐(BullMQ)에 전달할 데이터 스냅샷
-  payload       Json        @db.JsonB 
-  status        String      @default("PENDING") // PENDING, PROCESSED, FAILED
-  createdAt     DateTime    @default(now())
+enum Role {
+  USER
+  ADMIN
 }
