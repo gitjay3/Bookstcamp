@@ -1,0 +1,29 @@
+import type { EventStatus } from "@/types/event";
+
+
+interface EventStatusLabelProps {
+  status: EventStatus;
+}
+
+const STATUS_LABEL_TEXT: Record<EventStatus, string> = {
+  ONGOING: '진행중',
+  UPCOMING: '예정',
+  ENDED: '종료',
+};
+
+function EventStatusLabel({ status }: EventStatusLabelProps) {
+  return (
+    <span
+      className={[
+        'text-12 flex h-5 items-center rounded-sm px-2 font-bold',
+        status === 'ONGOING'
+          ? 'bg-brand-surface-default text-white'
+          : 'bg-neutral-surface-default text-neutral-text-secondary border-neutral-border-default border',
+      ].join(' ')}
+    >
+      {STATUS_LABEL_TEXT[status]}
+    </span>
+  );
+}
+
+export default EventStatusLabel;
