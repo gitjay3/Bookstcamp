@@ -20,7 +20,9 @@
     "docker:local:up": "dotenvx run -f .env.development -- docker compose --profile local up --build -d",
     "docker:local:down": "docker compose --profile local down",
     "docker:local:logs": "docker compose logs -f",
-    "docker:local:clean": "docker compose --profile local down -v"
+    "docker:local:clean": "docker compose --profile local down -v",
+    "db:migrate": "dotenvx run -f .env.development -- pnpm --filter backend prisma migrate dev",
+    "db:generate": "dotenvx run -f .env.development -- pnpm --filter backend prisma generate"
   },
   "keywords": [],
   "author": "",
