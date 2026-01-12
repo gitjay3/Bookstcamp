@@ -1,3 +1,5 @@
+import cn from '@/utils/cn';
+
 interface ReservationButtonProps {
   disabled: boolean;
   onClick: () => void;
@@ -11,12 +13,12 @@ function ReservationButton({ disabled, onClick }: ReservationButtonProps) {
           type="button"
           onClick={onClick}
           disabled={disabled}
-          className={[
+          className={cn(
             'text-16 w-full rounded-lg py-4 font-bold text-white transition',
             disabled
               ? 'bg-brand-surface-disabled cursor-not-allowed'
-              : 'bg-brand-surface-default hover:bg-brand-400',
-          ].join(' ')}
+              : 'bg-brand-surface-default hover:bg-brand-400'
+          )}
         >
           예약하기
         </button>

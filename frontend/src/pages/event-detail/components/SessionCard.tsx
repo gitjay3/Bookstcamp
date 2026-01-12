@@ -1,4 +1,5 @@
 import type { EventSession } from '@/types/event';
+import cn from '@/utils/cn';
 
 interface SessionCardProps {
   session: EventSession;
@@ -37,13 +38,13 @@ function SessionCard({ session, isSelected, onSelect }: SessionCardProps) {
       type="button"
       onClick={handleClick}
       disabled={isClosed}
-      className={[
+      className={cn(
         'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition',
-        getCardBorderClass(isClosed, isSelected),
-      ].join(' ')}
+        getCardBorderClass(isClosed, isSelected)
+      )}
     >
       <div className="flex items-center gap-4">
-        <span className={['text-16 font-medium', getContentTextClass(isSelected)].join(' ')}>
+        <span className={cn('text-16 font-medium', getContentTextClass(isSelected))}>
           {content}
         </span>
         <span className="text-neutral-text-tertiary">|</span>
@@ -54,12 +55,12 @@ function SessionCard({ session, isSelected, onSelect }: SessionCardProps) {
         <span className="text-16 text-neutral-text-secondary">{location}</span>
       </div>
       <span
-        className={[
+        className={cn(
           'text-16',
           isClosed
             ? 'text-error-text-primary font-medium'
-            : 'text-neutral-text-secondary font-medium',
-        ].join(' ')}
+            : 'text-neutral-text-secondary font-medium'
+        )}
       >
         {isClosed ? '마감' : `${currentCount}/${maxCount}`}
       </span>
