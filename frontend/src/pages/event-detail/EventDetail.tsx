@@ -4,6 +4,7 @@ import type { EventDetail as EventDetailType } from '@/types/event';
 import EventDetailHeader from './components/EventDetailHeader';
 import SessionList from './components/SessionList';
 import ReservationButton from './components/ReservationButton';
+import ReservationDisabled from './components/ReservationDisabled';
 
 const mockEventDetails: Record<number, EventDetailType> = {
   1: {
@@ -131,7 +132,11 @@ function EventDetail() {
           />
         </div>
       </div>
-      <ReservationButton disabled={selectedSessionId === null} onClick={handleReservation} />
+      {eventDetail.status === 'ONGOING' ? (
+        <ReservationButton disabled={selectedSessionId === null} onClick={handleReservation} />
+      ) : (
+        <ReservationDisabled />
+      )}
     </div>
   );
 }
