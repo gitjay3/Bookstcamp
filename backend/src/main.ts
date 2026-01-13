@@ -26,7 +26,11 @@ async function bootstrap() {
     .addTag('reservations', '예약 관련 API')
     .addTag('events', '이벤트 관련 API')
     .addTag('event-slots', '슬롯 정원 조회 API')
-    .addBearerAuth() // JWT 인증 추가 (TODO)
+    .addCookieAuth('access_token', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'access_token',
+    })
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
