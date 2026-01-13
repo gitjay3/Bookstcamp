@@ -19,7 +19,7 @@ model Event {
   description String?
   track       Track       @default(ALL)
   slotSchema  Json
-  creatorId   String
+  creatorId   String      @db.Uuid()
   startTime   DateTime
   endTime     DateTime
   createdAt   DateTime    @default(now())
@@ -43,7 +43,7 @@ model EventSlot {
 
 model Reservation {
   id                Int                @id @default(autoincrement())
-  userId            String
+  userId            String             @db.Uuid()
   slotId            Int
   status            ReservationStatus  @default(PENDING)
   reservedAt        DateTime           @default(now())
@@ -62,7 +62,7 @@ model ReservationOutbox {
 }
 
 model User {
-  id          String        @id
+  id          String        @id @default(uuid()) @db.Uuid()
   githubId    String        @unique
   githubLogin String
   name        String
