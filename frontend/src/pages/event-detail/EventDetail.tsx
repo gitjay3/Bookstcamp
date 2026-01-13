@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router';
 import type { EventDetail, EventDetail as EventDetailType } from '@/types/event';
-import EventDetailHeader from './components/EventDetailHeader';
-import ReservationButton from './components/ReservationButton';
 import { getEvent } from '@/api/event';
 import { getSlotAvailability } from '@/api/eventSlot';
+import EventDetailHeader from './components/EventDetailHeader';
+import ReservationButton from './components/ReservationButton';
 import SlotList from './components/SlotList';
 
 const POLLING_INTERVAL = 1000; // 성능 보면서 ms 단위로 바꿔도?
@@ -37,7 +37,7 @@ function EventDetail() {
     try {
       const availabilityData = await getSlotAvailability(Number(id));
 
-      //TODO : 나중에 정보 비교해서 변경사항 없으면 리렌더링 안되게
+      // TODO : 나중에 정보 비교해서 변경사항 없으면 리렌더링 안되게
 
       setEvent((prevEvent) => {
         if (!prevEvent) return null;
@@ -71,9 +71,9 @@ function EventDetail() {
   // 실시간 정원 폴링
   useEffect(() => {
     if (!event || event.stauts !== 'ONGOING') {
-      return;
+      return () => {};
     }
-    //TODO : 사용자가 다른 탭으로 이동하면 폴링을 일시 중단
+    // TODO : 사용자가 다른 탭으로 이동하면 폴링을 일시 중단
 
     updateSlotAvailability();
 

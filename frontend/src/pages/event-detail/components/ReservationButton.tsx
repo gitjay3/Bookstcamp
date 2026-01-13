@@ -37,6 +37,15 @@ function ReservationButton({
     }
   };
 
+  let buttonText;
+  if (isSubmitting) {
+    buttonText = '예약 중...';
+  } else if (isReservable) {
+    buttonText = '예약하기';
+  } else {
+    buttonText = '예약 기간이 아닙니다';
+  }
+
   return (
     <div className="border-neutral-border-default fixed right-0 bottom-0 left-0 flex justify-center border-t bg-white py-4">
       <button
@@ -50,7 +59,7 @@ function ReservationButton({
             'bg-neutral-surface-default text-neutral-text-tertiary cursor-not-allowed',
         )}
       >
-        {isSubmitting ? '예약 중...' : isReservable ? '예약하기' : '예약 기간이 아닙니다'}
+        {buttonText}
       </button>
     </div>
   );
