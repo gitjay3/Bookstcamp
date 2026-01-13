@@ -47,6 +47,17 @@ export class EventsService {
           ? { track: parsedTrack }
           : undefined,
       orderBy: { startTime: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        track: true,
+        creatorId: true,
+        startTime: true,
+        endTime: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
