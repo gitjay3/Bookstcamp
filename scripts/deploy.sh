@@ -132,11 +132,16 @@ fi
 # 6. Prisma 마이그레이션 실행
 log_info "Step 7: Prisma 마이그레이션 실행"
 
-# dotenvx로 DATABASE_URL 가져오기
-if command -v dotenvx &> /dev/null && [ -f "$ENV_FILE" ]; then
-    MIGRATION_DATABASE_URL=$(dotenvx get DATABASE_URL -f "$ENV_FILE")
-else
+# DATABASE_URL 결정: 환경변수 우선, 없으면 dotenvx로 복호화
+if [ -n "${DATABASE_URL:-}" ]; then
     MIGRATION_DATABASE_URL="$DATABASE_URL"
+    log_info "환경변수에서 DATABASE_URL 사용"
+elif command -v dotenvx &> /dev/null && [ -f "$ENV_FILE" ]; then
+    MIGRATION_DATABASE_URL=$(dotenvx get DATABASE_URL -f "$ENV_FILE")
+    log_info "dotenvx로 DATABASE_URL 복호화"
+else
+    log_error "DATABASE_URL을 찾을 수 없습니다"
+    exit 1
 fi
 
 if docker compose -f "$COMPOSE_FILE" run --rm -e DATABASE_URL="$MIGRATION_DATABASE_URL" backend npx prisma migrate deploy; then
