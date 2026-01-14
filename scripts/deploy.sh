@@ -131,7 +131,15 @@ fi
 
 # 6. Prisma 마이그레이션 실행
 log_info "Step 7: Prisma 마이그레이션 실행"
-if run_with_env docker compose -f "$COMPOSE_FILE" run --rm backend npx prisma migrate deploy; then
+
+# dotenvx로 DATABASE_URL 가져오기
+if command -v dotenvx &> /dev/null && [ -f "$ENV_FILE" ]; then
+    MIGRATION_DATABASE_URL=$(dotenvx get DATABASE_URL -f "$ENV_FILE")
+else
+    MIGRATION_DATABASE_URL="$DATABASE_URL"
+fi
+
+if docker compose -f "$COMPOSE_FILE" run --rm -e DATABASE_URL="$MIGRATION_DATABASE_URL" backend npx prisma migrate deploy; then
     log_info "마이그레이션 성공"
 else
     log_error "마이그레이션 실패"
