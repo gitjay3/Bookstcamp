@@ -64,7 +64,7 @@ describe('EventsService', () => {
       });
     });
 
-    it('track이 ALL이면 모든 이벤트를 반환한다', async () => {
+    it('track이 COMMON이면 모든 이벤트를 반환한다', async () => {
       const mockEvents = [
         { id: 1, title: 'Event 1', track: Track.WEB },
         { id: 2, title: 'Event 2', track: Track.ANDROID },
@@ -72,7 +72,7 @@ describe('EventsService', () => {
 
       prismaMock.event.findMany.mockResolvedValue(mockEvents);
 
-      const result = await service.findAll('ALL');
+      const result = await service.findAll('COMMON');
 
       expect(result).toEqual(mockEvents);
       expect(prismaMock.event.findMany).toHaveBeenCalledWith({
@@ -119,7 +119,7 @@ describe('EventsService', () => {
       const mockEvent = {
         id: 1,
         title: 'Test Event',
-        EventSlot: [{ id: 1, maxCapacity: 10 }],
+        slots: [{ id: 1, maxCapacity: 10 }],
       };
 
       prismaMock.event.findUnique.mockResolvedValue(mockEvent);
@@ -129,7 +129,7 @@ describe('EventsService', () => {
       expect(result).toEqual(mockEvent);
       expect(prismaMock.event.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
-        include: { EventSlot: true },
+        include: { slots: true },
       });
     });
 
@@ -144,6 +144,17 @@ describe('EventsService', () => {
   });
 
   describe('create', () => {
+    const mockAdminUserId = 'admin-user-uuid';
+
+    beforeEach(() => {
+      prismaMock.authAccount.findUnique.mockResolvedValue({
+        id: 1,
+        provider: 'INTERNAL',
+        providerId: 'admin',
+        user: { id: mockAdminUserId, name: 'Admin' },
+      });
+    });
+
     it('슬롯과 함께 이벤트를 생성한다', async () => {
       const createDto = {
         title: 'New Event',
@@ -158,8 +169,8 @@ describe('EventsService', () => {
       const mockCreatedEvent = {
         id: 1,
         ...createDto,
-        creatorId: 'system-admin',
-        EventSlot: [{ id: 1, maxCapacity: 10, extraInfo: {} }],
+        creatorId: mockAdminUserId,
+        slots: [{ id: 1, maxCapacity: 10, extraInfo: {} }],
       };
 
       prismaMock.event.create.mockResolvedValue(mockCreatedEvent);
@@ -167,6 +178,15 @@ describe('EventsService', () => {
       const result = await service.create(createDto);
 
       expect(result).toEqual(mockCreatedEvent);
+      expect(prismaMock.authAccount.findUnique).toHaveBeenCalledWith({
+        where: {
+          provider_providerId: {
+            provider: 'INTERNAL',
+            providerId: 'admin',
+          },
+        },
+        include: { user: true },
+      });
       expect(prismaMock.event.create).toHaveBeenCalledWith({
         data: {
           title: createDto.title,
@@ -175,16 +195,34 @@ describe('EventsService', () => {
           startTime: createDto.startTime,
           endTime: createDto.endTime,
           slotSchema: createDto.slotSchema,
-          creatorId: 'system-admin',
-          EventSlot: {
+          creatorId: mockAdminUserId,
+          slots: {
             create: createDto.slots.map((slot) => ({
               maxCapacity: slot.maxCapacity,
               extraInfo: slot.extraInfo,
             })),
           },
         },
-        include: { EventSlot: true },
+        include: { slots: true },
       });
+    });
+
+    it('ADMIN 계정이 없으면 에러를 던진다', async () => {
+      prismaMock.authAccount.findUnique.mockResolvedValue(null);
+
+      const createDto = {
+        title: 'New Event',
+        description: 'Event description',
+        track: Track.WEB,
+        startTime: new Date(),
+        endTime: new Date(),
+        slotSchema: {},
+        slots: [{ maxCapacity: 10, extraInfo: {} }],
+      };
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        'ADMIN 계정이 존재하지 않습니다. seed를 확인하세요.',
+      );
     });
   });
 });
