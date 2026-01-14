@@ -5,9 +5,9 @@ import { AuthService } from './auth.service';
 import type { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import ms, { StringValue } from 'ms';
-import { Public } from 'src/common/decorators/public.decorator';
+import { Public } from 'src/auth/decorators/public.decorator';
 import { LoginDto } from './dto/login.dto';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @Public()
 @Controller('auth')
