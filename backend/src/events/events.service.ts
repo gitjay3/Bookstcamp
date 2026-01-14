@@ -69,11 +69,8 @@ export class EventsService {
         title: true,
         description: true,
         track: true,
-        creatorId: true,
         startTime: true,
         endTime: true,
-        createdAt: true,
-        updatedAt: true,
       },
     });
   }
