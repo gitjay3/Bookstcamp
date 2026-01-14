@@ -10,22 +10,44 @@ enum Track {
   ANDROID
   IOS
   WEB
-  ALL
+  COMMON
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  GITHUB
+  INTERNAL
+}
+
+enum ApplicationUnit {
+  INDIVIDUAL
+  TEAM
 }
 
 model Event {
-  id          Int         @id @default(autoincrement())
-  title       String
-  description String?
-  track       Track       @default(ALL)
-  slotSchema  Json
-  creatorId   String      @db.Uuid()
-  startTime   DateTime
-  endTime     DateTime
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  User        User        @relation(fields: [creatorId], references: [id])
-  EventSlot   EventSlot[]
+  id              Int             @id @default(autoincrement())
+  title           String
+  description     String?
+  track           Track           @default(COMMON)
+  applicationUnit ApplicationUnit @default(INDIVIDUAL)
+  slotSchema      Json
+  creatorId       String          @db.Uuid()
+  startTime       DateTime
+  endTime         DateTime
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  User            User            @relation(fields: [creatorId], references: [id])
+  EventSlot       EventSlot[]
 }
 
 model EventSlot {
@@ -65,7 +87,6 @@ model User {
   id           String        @id @default(uuid()) @db.Uuid()
   name         String
   role         Role          @default(USER)
-  accessToken  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   Event        Event[]
@@ -82,20 +103,4 @@ model AuthAccount {
   user         User         @relation(fields: [userId], references: [id])
 
   @@unique([provider, providerId])
-}
-
-enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-}
-
-enum Role {
-  USER
-  ADMIN
-}
-
-enum AuthProvider {
-  GITHUB
-  INTERNAL
 }
