@@ -12,6 +12,9 @@ import { EventSlotsService } from '../event-slots/event-slots.service';
 import { EventSlotsResponseDto } from 'src/event-slots/dto/slot-availability-response.dto';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { Role } from '@prisma/client';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @ApiTags('events')
 @Controller('events')
@@ -22,8 +25,9 @@ export class EventsController {
   ) {}
 
   @Post()
-  create(@Body() dto: CreateEventDto) {
-    return this.eventsService.create(dto);
+  @Auth(Role.ADMIN)
+  create(@Body() dto: CreateEventDto, @CurrentUser('id') userId: string) {
+    return this.eventsService.create(dto, userId);
   }
 
   @Get()

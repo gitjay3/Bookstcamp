@@ -1,34 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
-import { AuthProvider, Track } from '@prisma/client';
+import { Track } from '@prisma/client';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class EventsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateEventDto) {
-    // TODO: 인증 로직 수정
-    // 임시: seed로 만든 INTERNAL admin user 조회
-    const adminAuthAccount = await this.prisma.authAccount.findUnique({
-      where: {
-        provider_providerId: {
-          provider: AuthProvider.INTERNAL,
-          providerId: 'admin',
-        },
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!adminAuthAccount?.user) {
-      throw new Error('ADMIN 계정이 존재하지 않습니다. seed를 확인하세요.');
-    }
-
-    const adminUserId = adminAuthAccount.user.id;
-
+  async create(dto: CreateEventDto, creatorId: string) {
     const {
       title,
       description,
@@ -49,7 +29,7 @@ export class EventsService {
         startTime,
         endTime,
         slotSchema,
-        creatorId: adminUserId,
+        creatorId,
 
         slots: {
           create: slots.map((slot) => ({
