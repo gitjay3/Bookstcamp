@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - deploy/116-J116-duckdns-letsencrypt  # 테스트용 (나중에 제거)
   workflow_dispatch:
 
 # Production 배포는 한 번에 하나씩만
