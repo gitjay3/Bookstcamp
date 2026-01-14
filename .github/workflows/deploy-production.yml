@@ -53,8 +53,8 @@ jobs:
           tags: |
             ${{ secrets.NCP_REGISTRY_URL }}/bookstcamp-${{ matrix.service }}:production-latest
             ${{ secrets.NCP_REGISTRY_URL }}/bookstcamp-${{ matrix.service }}:${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
       - name: Image built successfully
         run: |

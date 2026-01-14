@@ -134,24 +134,34 @@ log_info "Step 7: Prisma 마이그레이션 실행"
 
 # DATABASE_URL 결정: 환경변수 우선, 없으면 dotenvx로 복호화
 if [ -n "${DATABASE_URL:-}" ]; then
+    MIGRATION_DATABASE_URL="$DATABASE_URL"
     log_info "환경변수에서 DATABASE_URL 사용"
 elif command -v dotenvx &> /dev/null && [ -f "$ENV_FILE" ]; then
-    export DATABASE_URL=$(dotenvx get DATABASE_URL -f "$ENV_FILE")
+    MIGRATION_DATABASE_URL=$(dotenvx get DATABASE_URL -f "$ENV_FILE")
     log_info "dotenvx로 DATABASE_URL 복호화"
 else
     log_error "DATABASE_URL을 찾을 수 없습니다"
     exit 1
 fi
 
-# docker-compose.yml의 ${DATABASE_URL} 참조를 위해 export
-export DATABASE_URL
+# 디버깅: DATABASE_URL 값 확인 (민감정보 제외)
+log_info "DATABASE_URL 길이: ${#MIGRATION_DATABASE_URL}"
+log_info "DATABASE_URL 시작: ${MIGRATION_DATABASE_URL:0:15}..."
 
-if docker compose -f "$COMPOSE_FILE" run --rm backend npx prisma migrate deploy; then
+# 임시 env 파일로 DATABASE_URL 전달 (특수문자 이스케이프 문제 방지)
+MIGRATION_ENV_FILE="/tmp/migration_$$.env"
+printf 'DATABASE_URL=%s\n' "$MIGRATION_DATABASE_URL" > "$MIGRATION_ENV_FILE"
+log_info "env 파일 생성: $MIGRATION_ENV_FILE"
+log_info "env 파일 내용 길이: $(wc -c < "$MIGRATION_ENV_FILE") bytes"
+
+if docker compose -f "$COMPOSE_FILE" run --rm --env-file "$MIGRATION_ENV_FILE" backend npx prisma migrate deploy; then
     log_info "마이그레이션 성공"
 else
+    rm -f "$MIGRATION_ENV_FILE"
     log_error "마이그레이션 실패"
     exit 1
 fi
+rm -f "$MIGRATION_ENV_FILE"
 
 # 7. 컨테이너 재시작
 log_info "Step 8: 컨테이너 재시작"
