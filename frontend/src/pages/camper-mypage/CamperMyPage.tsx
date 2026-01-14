@@ -7,8 +7,16 @@ import type { Track, ApplicationUnit } from '@/types/event';
 type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 type ViewMode = 'grid' | 'ticket';
 
+interface SlotExtraInfo {
+  mentor?: string;
+  location?: string;
+  [key: string]: unknown;
+}
+
 interface MyReservation {
   id: number;
+  userId: string;
+  slotId: number;
   status: ReservationStatus;
   reservedAt: string;
   eventTitle: string;
@@ -16,8 +24,7 @@ interface MyReservation {
   eventEndTime: string;
   eventTrack: Track;
   applicationUnit: ApplicationUnit;
-  mentor?: string;
-  location?: string;
+  extraInfo?: SlotExtraInfo;
 }
 
 const RESERVATION_STATUS_TEXT: Record<ReservationStatus | 'ENDED', string> = {
@@ -28,7 +35,7 @@ const RESERVATION_STATUS_TEXT: Record<ReservationStatus | 'ENDED', string> = {
 };
 
 // TODO: 백엔드 API 연동
-// GET /reservations API 응답에 eventTrack, applicationUnit, mentor, location 필드 추가 필요
+// GET /reservations API 응답에 eventTrack, applicationUnit, extraInfo 필드 추가 필요
 const MOCK_RESERVATIONS: MyReservation[] = [];
 
 function formatDateWithDay(dateStr: string): string {
@@ -141,10 +148,11 @@ function FeaturedTicket({ reservation }: FeaturedTicketProps) {
     eventTrack,
     applicationUnit,
     status,
-    mentor,
-    location,
+    extraInfo,
   } = reservation;
   const isEnded = isEventEnded(eventEndTime);
+  const mentor = extraInfo?.mentor;
+  const location = extraInfo?.location;
 
   return (
     <div className="group flex cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -211,11 +219,12 @@ function ReservationTicket({ reservation }: ReservationTicketProps) {
     eventTrack,
     applicationUnit,
     status,
-    mentor,
-    location,
+    extraInfo,
   } = reservation;
   const isEnded = isEventEnded(eventEndTime);
   const isActive = status === 'CONFIRMED' && !isEnded;
+  const mentor = extraInfo?.mentor;
+  const location = extraInfo?.location;
 
   return (
     <div className="group flex cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:border-brand-500 hover:shadow-sm">
@@ -336,10 +345,10 @@ function CamperMyPage() {
                     </h3>
                   </div>
                   <div className="mt-auto flex flex-col gap-2 border-t border-gray-100 bg-brand-50 px-5 py-4">
-                    {reservation.mentor && (
+                    {reservation.extraInfo?.mentor && (
                       <div className="flex items-center text-12 text-gray-700">
                         <span className="w-8 shrink-0 font-bold text-brand-500">멘토</span>
-                        <span className="truncate">{reservation.mentor}</span>
+                        <span className="truncate">{reservation.extraInfo.mentor}</span>
                       </div>
                     )}
                     <div className="flex items-center text-12 text-gray-700">
@@ -348,10 +357,10 @@ function CamperMyPage() {
                         {formatDateWithDay(reservation.eventStartTime)}
                       </span>
                     </div>
-                    {reservation.location && (
+                    {reservation.extraInfo?.location && (
                       <div className="flex items-center text-12 text-gray-700">
                         <span className="w-8 shrink-0 font-bold text-brand-500">장소</span>
-                        <span className="truncate">{reservation.location}</span>
+                        <span className="truncate">{reservation.extraInfo.location}</span>
                       </div>
                     )}
                   </div>
