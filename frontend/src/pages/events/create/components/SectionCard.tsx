@@ -12,7 +12,7 @@ export default function SectionCard({ title, description, children }: SectionCar
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <div className="text-20 font-bold">{title}</div>
-          <div className="text-neutral-text-secondary text-sm">{description}</div>
+          <div className="text-neutral-text-secondary text-16">{description}</div>
         </div>
       </div>
 
