@@ -90,6 +90,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Lua scripts loaded');
   }
 
+  async syncAllStocks(
+    // 서버 시작 시 모든 슬롯 재고 동기화
+    slots: { id: number; maxCapacity: number; currentCount: number }[],
+  ): Promise<void> {
+    for (const slot of slots) {
+      await this.initStock(slot.id, slot.maxCapacity, slot.currentCount);
+    }
+    this.logger.log(` ${slots.length} 슬롯 재고를 Redis에 동기화 했습니다.`);
+  }
+
   // 재고 차감 (예약 신청 시)
   async decrementStock(slotId: number): Promise<boolean> {
     const key = this.getStockKey(slotId);

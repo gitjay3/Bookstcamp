@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,6 +10,13 @@ import {
   RESERVATION_QUEUE,
   PROCESS_RESERVATION_JOB,
 } from './dto/reservation-job.dto';
+import {
+  SlotFullException,
+  SlotNotFoundException,
+  ReservationNotFoundException,
+  UnauthorizedReservationException,
+  AlreadyCancelledException,
+} from '../../common/exceptions/api.exception';
 
 type ReservationWithRelations = Prisma.ReservationGetPayload<{
   include: {
@@ -44,14 +47,14 @@ export class ReservationsService {
     });
 
     if (!slot) {
-      throw new NotFoundException('슬롯을 찾을 수 없습니다');
+      throw new SlotNotFoundException();
     }
 
     // Redis에서 재고 차감 시도
     const success = await this.redisService.decrementStock(dto.slotId);
 
     if (!success) {
-      throw new BadRequestException('정원이 마감되었습니다');
+      throw new SlotFullException();
     }
 
     // Queue에 Job 추가
@@ -119,15 +122,15 @@ export class ReservationsService {
       });
 
       if (!reservation) {
-        throw new NotFoundException('예약을 찾을 수 없습니다');
+        throw new ReservationNotFoundException();
       }
 
       if (reservation.userId !== userId) {
-        throw new BadRequestException('본인의 예약만 취소할 수 있습니다');
+        throw new UnauthorizedReservationException();
       }
 
       if (reservation.status === 'CANCELLED') {
-        throw new BadRequestException('이미 취소된 예약입니다');
+        throw new AlreadyCancelledException();
       }
 
       const [updated] = await Promise.all([

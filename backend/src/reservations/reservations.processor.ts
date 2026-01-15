@@ -8,6 +8,12 @@ import {
   RESERVATION_QUEUE,
   PROCESS_RESERVATION_JOB,
 } from './dto/reservation-job.dto';
+import {
+  SlotFullException,
+  DuplicateReservationException,
+  OptimisticLockException,
+  SlotNotFoundException,
+} from '../../common/exceptions/api.exception';
 
 @Processor(RESERVATION_QUEUE)
 export class ReservationsProcessor extends WorkerHost {
@@ -54,7 +60,7 @@ export class ReservationsProcessor extends WorkerHost {
       });
 
       if (!slot) {
-        throw new Error('슬롯을 찾을 수 없습니다');
+        throw new SlotNotFoundException();
       }
 
       // 낙관적 락으로 슬롯 업데이트
@@ -72,7 +78,17 @@ export class ReservationsProcessor extends WorkerHost {
 
       // 업데이트 실패 시 (version 불일치 또는 정원 초과)
       if (updated.count === 0) {
-        throw new Error('낙관적 락 충돌 또는 정원 초과');
+        const currentSlot = await tx.eventSlot.findUnique({
+          where: { id: slotId },
+        });
+
+        if (
+          currentSlot &&
+          currentSlot.currentCount >= currentSlot.maxCapacity
+        ) {
+          throw new SlotFullException();
+        }
+        throw new OptimisticLockException();
       }
 
       //  중복 예약 체크
@@ -85,7 +101,7 @@ export class ReservationsProcessor extends WorkerHost {
       });
 
       if (existing) {
-        throw new Error('이미 예약한 일정입니다');
+        throw new DuplicateReservationException();
       }
 
       // 예약 생성
