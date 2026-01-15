@@ -19,7 +19,7 @@ import {
 import { ReservationsService } from './reservations.service';
 import { ApplyReservationDto } from './dto/apply-reservation.dto';
 import { ReservationResponseDto } from './dto/reservation-response.dto';
-import { ErrorResponseDto } from 'common/dto/error-response.dto';
+import { ErrorResponseDto } from '../common/dto/error-response.dto';
 import { UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { Request } from 'express';
