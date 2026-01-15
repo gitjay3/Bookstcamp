@@ -33,7 +33,7 @@ function SlotList({ status, slotSchema, slots, selectedSlotId, setSelectedSlotId
       </div>
       <div className="flex flex-col gap-3">
         {slots.map((slot) => (
-          <Slot isReservable={status === 'ONGOING'} slot={slot} selectedSlotId={selectedSlotId} setSelectedSlotId={setSelectedSlotId} />
+          <Slot key={slot.id} isReservable={status === 'ONGOING'} slot={slot} selectedSlotId={selectedSlotId} setSelectedSlotId={setSelectedSlotId} />
         ))}
       </div>
     </div>

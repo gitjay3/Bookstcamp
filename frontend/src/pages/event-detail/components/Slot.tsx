@@ -3,10 +3,10 @@ import cn from '@/utils/cn';
 
 const FIELD_ORDER = ['content', 'startTime', 'endTime', 'location', 'mentor'];
 
-function getOrderedValues(extraInfo: Record<string, string>): string[] {
+function getOrderedEntries(extraInfo: Record<string, string>): { key: string; value: string }[] {
   return FIELD_ORDER
     .filter((key) => key in extraInfo)
-    .map((key) => extraInfo[key]);
+    .map((key) => ({ key, value: extraInfo[key] }));
 }
 
 interface SlotProps {
@@ -19,7 +19,7 @@ interface SlotProps {
 function Slot({ isReservable, slot, selectedSlotId, setSelectedSlotId }: SlotProps) {
   const isClosed = slot.maxCapacity === slot.currentCount;
   const isSelected = selectedSlotId === slot.id;
-  const orderedValues = getOrderedValues(slot.extraInfo);
+  const orderedEntries = getOrderedEntries(slot.extraInfo);
 
   return (
     <button
@@ -36,17 +36,17 @@ function Slot({ isReservable, slot, selectedSlotId, setSelectedSlotId }: SlotPro
       }}
     >
       <div className="flex gap-1">
-        {orderedValues.map((value, idx) => (
-          <div key={idx} className="flex items-center gap-1">
+        {orderedEntries.map((entry, idx) => (
+          <div key={entry.key} className="flex items-center gap-1">
             <div
               className={cn(
                 isSelected && 'text-brand-text-primary',
                 isClosed && 'text-neutral-text-secondary',
               )}
             >
-              {value}
+              {entry.value}
             </div>
-            {idx < orderedValues.length - 1 && (
+            {idx < orderedEntries.length - 1 && (
               <div className="text-neutral-border-default">|</div>
             )}
           </div>
