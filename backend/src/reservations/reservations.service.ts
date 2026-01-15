@@ -16,6 +16,7 @@ import {
   ReservationNotFoundException,
   UnauthorizedReservationException,
   AlreadyCancelledException,
+  OptimisticLockException,
 } from '../../common/exceptions/api.exception';
 
 type ReservationWithRelations = Prisma.ReservationGetPayload<{
@@ -115,10 +116,11 @@ export class ReservationsService {
   }
 
   async cancel(id: number, userId: string): Promise<Reservation> {
-    // apply와 동일
-    const updated = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 예약 조회 (슬롯 정보 포함) -> 트랜잭션을 위한 version과 maxCapacity 받아와야 함
       const reservation = await tx.reservation.findUnique({
         where: { id },
+        include: { slot: true },
       });
 
       if (!reservation) {
@@ -133,20 +135,38 @@ export class ReservationsService {
         throw new AlreadyCancelledException();
       }
 
-      const [updated] = await Promise.all([
-        tx.reservation.update({
-          where: { id },
-          data: { status: 'CANCELLED' },
-        }),
-        tx.eventSlot.update({
-          where: { id: reservation.slotId },
-          data: { currentCount: { decrement: 1 } },
-        }),
-      ]);
+      // 낙관적 락을 통한 슬롯 업데이트
+      const updatedSlot = await tx.eventSlot.updateMany({
+        where: {
+          id: reservation.slotId,
+          version: reservation.slot.version, // Read version
+        },
+        data: {
+          currentCount: { decrement: 1 },
+          version: { increment: 1 },
+        },
+      });
 
-      return { updated, userId: reservation.userId };
+      if (updatedSlot.count === 0) {
+        throw new OptimisticLockException();
+      }
+
+      // 예약 상태 변경
+      const updatedReservation = await tx.reservation.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+      });
+
+      return {
+        reservation: updatedReservation,
+        slotId: reservation.slotId,
+        maxCapacity: reservation.slot.maxCapacity,
+      };
     });
 
-    return updated.updated;
+    // Redis 재고 복구 (트랜잭션 성공 후)
+    await this.redisService.incrementStock(result.slotId, result.maxCapacity);
+
+    return result.reservation;
   }
 }
