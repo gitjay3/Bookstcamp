@@ -7,6 +7,7 @@ import {
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import * as bcrypt from 'bcrypt';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -14,7 +15,13 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('🌱 Seeding database...');
-  // 1. 시스템 관리자 생성
+
+  // 1. 마스터 비밀번호 설정
+  // TODO: .env로 수정
+  const adminPassword = 'test-123';
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+  // 2. 시스템 관리자 생성
   const admin = await prisma.authAccount.upsert({
     where: {
       provider_providerId: {
@@ -22,11 +29,13 @@ async function main() {
         providerId: 'admin',
       },
     },
-    update: {},
+    update: {
+      passwordHash: hashedPassword,
+    },
     create: {
       provider: AuthProvider.INTERNAL,
       providerId: 'admin',
-      passwordHash: 'hashed-password',
+      passwordHash: hashedPassword,
       user: {
         create: {
           name: '시스템 관리자',
@@ -40,7 +49,7 @@ async function main() {
   const adminUserId = admin.user.id;
   console.log('✓ 관리자 계정 생성:', adminUserId);
 
-  // 2. 테스트 사용자 생성 (예약 테스트용)
+  // 3. 테스트 사용자 생성 (예약 테스트용)
   const testUser = await prisma.authAccount.upsert({
     where: {
       provider_providerId: {
@@ -64,7 +73,7 @@ async function main() {
 
   console.log('✓ 테스트 사용자 생성:', testUser.user.id);
 
-  // 3. 이벤트 생성
+  // 4. 이벤트 생성
   const event1 = await prisma.event.upsert({
     where: { id: 1 },
     update: {},
@@ -128,7 +137,7 @@ async function main() {
   });
   console.log('✓ 이벤트 3 생성:', event3.title);
 
-  // 4. 이벤트 슬롯 생성
+  // 5. 이벤트 슬롯 생성
   const slots = [
     {
       id: 1,
@@ -259,6 +268,10 @@ async function main() {
       create: slot,
     });
   }
+
+  // 6. PostgreSQL ID 시퀀스 초기화
+  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"Event"', 'id'), coalesce(max(id), 1)) FROM "Event"`;
+  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"EventSlot"', 'id'), coalesce(max(id), 1)) FROM "EventSlot"`;
 
   console.log('✓ 슬롯 데이터 생성 완료');
   console.log('🎉 Seed 완료!');
