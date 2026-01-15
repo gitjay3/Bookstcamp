@@ -4,6 +4,7 @@ import Layout from './Layout';
 import Main from './pages/main/Main';
 import EventDetail from './pages/event-detail/EventDetail';
 import ManageTemplate from './pages/manage-template/ManageTemplate';
+import CamperMyPage from './pages/camper-mypage/CamperMyPage';
 
 const router = createBrowserRouter([
   {
@@ -12,6 +13,7 @@ const router = createBrowserRouter([
       { path: '/', element: <Main /> },
       { path: '/events/:id', element: <EventDetail /> },
       { path: '/templates', element: <ManageTemplate />}
+      { path: '/me', element: <CamperMyPage /> },
     ],
   },
 ]);
