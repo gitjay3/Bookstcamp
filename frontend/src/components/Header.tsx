@@ -33,7 +33,7 @@ function Header({ navItems }: HeaderProps) {
         <button
           type="button"
           onClick={logout}
-          className="text-neutral-text-secondary hover:text-neutral-text-primary flex h-8 w-8 items-center justify-center transition-colors"
+          className="text-neutral-text-secondary hover:text-brand-500 hover:bg-neutral-surface-default flex h-8 w-8 items-center justify-center rounded-md transition-colors"
         >
           <LogoutIcon className="h-4 w-4" />
         </button>
