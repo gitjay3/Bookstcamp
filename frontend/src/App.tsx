@@ -12,7 +12,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Main /> },
       { path: '/events/:id', element: <EventDetail /> },
-      { path: '/templates', element: <ManageTemplate />}
+      { path: '/templates', element: <ManageTemplate /> },
       { path: '/me', element: <CamperMyPage /> },
     ],
   },
