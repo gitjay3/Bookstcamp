@@ -2,10 +2,12 @@ import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/store/AuthContext';
 import Button from '@/components/Button';
 import PlusIcon from '@/assets/icons/plus.svg?react';
+import { useNavigate } from 'react-router';
 import EventList from './components/EventList';
 
 function Main() {
   const { isLoading, user } = useAuth();
+  const navigate = useNavigate();
 
   const role = user?.role ?? 'USER';
   const isAdmin = !isLoading && role === 'ADMIN';
@@ -22,7 +24,7 @@ function Main() {
         description={description}
         action={
           isAdmin ? (
-            <Button type="secondary">
+            <Button type="secondary" onClickHandler={() => navigate('/events/new')}>
               <PlusIcon className="h-4 w-4" />
               이벤트 생성
             </Button>
