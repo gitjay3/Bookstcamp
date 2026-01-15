@@ -39,7 +39,8 @@ export class ReservationsProcessor extends WorkerHost {
       await this.processReservation(userId, slotId);
       this.logger.log(`예약 확인: userId=${userId}, slotId=${slotId}`);
     } catch (error) {
-      this.logger.error(`예약 실패: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`예약 실패: ${message}`);
 
       // 보상 트랜잭션: Redis 재고 복구
       await this.redisService.incrementStock(slotId, maxCapacity);
