@@ -9,8 +9,7 @@
  * 5. 실행: npx ts-node scripts/test-concurrency.ts
  */
 
-const TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjMDNlZjhjYy1iMjAyLTRjNGItYWVhNi02MzMzNTUwZmM4YTgiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc2ODQ3ODgxMCwiZXhwIjoxNzY5MDgzNjEwfQ.iP8kWv5GgRUj6Hee_FByHq1EWYdL3IvrhN5xd0EqEKM'; // 브라우저에서 복사한 토큰
+const TOKEN = 'yourtoken';
 const SLOT_ID = 3; // 테스트할 슬롯 ID
 const CONCURRENT_REQUESTS = 10; // 동시 요청 수
 const BASE_URL = 'http://localhost:80/api';

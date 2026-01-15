@@ -8,8 +8,7 @@
  * 4. 실행: npx ts-node scripts/create-test-event.ts
  */
 
-const TOKEN =
-  'eyJzdWIiOiJjMDNlZjhjYy1iMjAyLTRjNGItYWVhNi02MzMzNTUwZmM4YTgiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc2ODQ3ODgxMCwiZXhwIjoxNzY5MDgzNjEwfQ'; // 브라우저에서 복사한 토큰
+const TOKEN = 'yourtoken'; // 브라우저에서 복사한 토큰
 const BASE_URL = 'http://localhost:80/api';
 
 async function createTestEvent() {
