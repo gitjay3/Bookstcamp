@@ -97,6 +97,9 @@ model User {
   events       Event[]
   reservations Reservation[]
   authAccounts AuthAccount[]
+  
+  organizations    CamperOrganization[]
+  preRegistrations CamperPreRegistration[]
 }
 
 model AuthAccount {
@@ -109,4 +112,52 @@ model AuthAccount {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([provider, providerId])
+}
+
+model Organization {
+  id          String   @id @default(uuid()) @db.Uuid()
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  campers             CamperOrganization[]
+  preRegistrations    CamperPreRegistration[]
+}
+
+model CamperOrganization {
+  id             String   @id @default(uuid()) @db.Uuid()
+  userId         String   @db.Uuid()
+  organizationId String   @db.Uuid()
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+}
+
+enum PreRegStatus {
+  INVITED
+  CLAIMED
+  REVOKED
+}
+
+model CamperPreRegistration {
+  id             String       @id @default(uuid()) @db.Uuid()
+  claimedUserId  String?      @db.Uuid()
+  organizationId String       @db.Uuid()
+  
+  camperId       String       // 부스트캠프 ID (교육생 ID)
+  username       String       // GitHub Username (중요 식별자)
+  name           String       // 실명
+  track          Track        // 과정 (분야)
+  
+  status         PreRegStatus @default(INVITED)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  claimedUser  User?        @relation(fields: [claimedUserId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([username])
 }
