@@ -4,6 +4,7 @@ import {
   Role,
   AuthProvider,
   ApplicationUnit,
+  PreRegStatus,
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -72,6 +73,53 @@ async function main() {
   });
 
   console.log('✓ 테스트 사용자 생성:', testUser.user.id);
+
+  console.log('✓ 테스트 사용자 생성:', testUser.user.id);
+
+  // 3-1. 조직(Organization) 생성
+  const organization = await prisma.organization.create({
+    data: {
+      name: '부스트캠프 9기',
+    },
+  });
+  console.log('✓ 조직 생성:', organization.name);
+
+  // 3-2. 사전 등록(PreRegistration) 데이터 생성
+  // (1) 미가입 유저 (INVITED)
+  await prisma.camperPreRegistration.create({
+    data: {
+      organizationId: organization.id,
+      camperId: 'J283',
+      name: '한지은',
+      username: 'hanpengbutt',
+      track: Track.WEB,
+      status: PreRegStatus.INVITED,
+    },
+  });
+
+  // (2) 탈퇴/재가입 시나리오 등을 위한 가입 유저 (CLAIMED) - 시드에서는 테스트용으로 미리 연결해둘 수도 있음
+  // 여기서는 로직 테스트를 위해 'testuser'를 위한 사전등록 데이터를 생성해둡니다.
+  await prisma.camperPreRegistration.create({
+    data: {
+      organizationId: organization.id,
+      camperId: 'J999',
+      name: '테스트 사용자',
+      username: '12345678',
+      track: Track.ANDROID,
+      status: PreRegStatus.CLAIMED,
+      claimedUserId: testUser.user.id,
+    },
+  });
+
+  // 이미 CLAIMED 상태니까 CamperOrganization도 연결해줌
+  await prisma.camperOrganization.create({
+    data: {
+      userId: testUser.user.id,
+      organizationId: organization.id,
+    },
+  });
+
+  console.log('✓ 사전 등록 데이터 생성 완료');
 
   // 4. 이벤트 생성
   const event1 = await prisma.event.upsert({
