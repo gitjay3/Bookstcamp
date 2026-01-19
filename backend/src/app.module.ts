@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RedisModule } from './redis/redis.module';
 import { BullModule } from '@nestjs/bullmq';
 import { TemplatesModule } from './templates/templates.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { TemplatesModule } from './templates/templates.module';
     EventSlotsModule,
     AuthModule,
     TemplatesModule,
+    OrganizationsModule,
   ],
   controllers: [AppController],
   providers: [
