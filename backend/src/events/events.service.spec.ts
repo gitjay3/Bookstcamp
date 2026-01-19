@@ -49,7 +49,7 @@ describe('EventsService', () => {
 
       expect(result).toEqual(mockEvents);
       expect(prismaMock.event.findMany).toHaveBeenCalledWith({
-        where: undefined,
+        where: { AND: [{}, {}] },
         orderBy: { startTime: 'asc' },
         select: expect.objectContaining({
           id: true,
@@ -68,7 +68,7 @@ describe('EventsService', () => {
 
       expect(result).toEqual(mockEvents);
       expect(prismaMock.event.findMany).toHaveBeenCalledWith({
-        where: { track: Track.WEB },
+        where: { AND: [{ track: Track.WEB }, {}] },
         orderBy: { startTime: 'asc' },
         select: expect.any(Object),
       });
@@ -86,7 +86,7 @@ describe('EventsService', () => {
 
       expect(result).toEqual(mockEvents);
       expect(prismaMock.event.findMany).toHaveBeenCalledWith({
-        where: undefined,
+        where: { AND: [{}, {}] },
         orderBy: { startTime: 'asc' },
         select: expect.any(Object),
       });
@@ -106,7 +106,7 @@ describe('EventsService', () => {
 
       await service.findAll('web');
       expect(prismaMock.event.findMany).toHaveBeenCalledWith({
-        where: { track: Track.WEB },
+        where: { AND: [{ track: Track.WEB }, {}] },
         orderBy: { startTime: 'asc' },
         select: expect.any(Object),
       });
@@ -117,7 +117,7 @@ describe('EventsService', () => {
 
       await service.findAll('  android  ');
       expect(prismaMock.event.findMany).toHaveBeenCalledWith({
-        where: { track: Track.ANDROID },
+        where: { AND: [{ track: Track.ANDROID }, {}] },
         orderBy: { startTime: 'asc' },
         select: expect.any(Object),
       });
