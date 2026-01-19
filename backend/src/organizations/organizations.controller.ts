@@ -2,6 +2,7 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { Role } from '@prisma/client';
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -11,8 +12,11 @@ export class OrganizationsController {
   @Get('me')
   @ApiOperation({ summary: '내 조직 목록 조회' })
   @ApiResponse({ status: 200, description: '내 조직 목록 조회 성공' })
-  findMyOrganizations(@CurrentUser('id') userId: string) {
-    return this.organizationsService.findMyOrganizations(userId);
+  findMyOrganizations(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: Role,
+  ) {
+    return this.organizationsService.findMyOrganizations(userId, role);
   }
 
   @Get(':id')

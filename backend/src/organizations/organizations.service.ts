@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class OrganizationsService {
@@ -17,7 +18,13 @@ export class OrganizationsService {
     return organization;
   }
 
-  async findMyOrganizations(userId: string) {
+  async findMyOrganizations(userId: string, role: Role) {
+    if (role === Role.ADMIN) {
+      return this.prisma.organization.findMany({
+        orderBy: { name: 'asc' },
+      });
+    }
+
     const userOrganizations = await this.prisma.camperOrganization.findMany({
       where: { userId },
       include: {
