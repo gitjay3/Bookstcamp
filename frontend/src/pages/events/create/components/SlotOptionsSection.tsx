@@ -6,6 +6,7 @@ import PlusIcon from '@/assets/icons/plus.svg?react';
 import TrashIcon from '@/assets/icons/trash.svg?react';
 import UploadIcon from '@/assets/icons/upload.svg?react';
 import TemplateIcon from '@/assets/icons/template.svg?react';
+import DownloadIcon from '@/assets/icons/download.svg?react';
 import type { EventFormValues } from '../schema';
 import SectionCard from './SectionCard';
 import TemplateSelectModal, { type Template, type SlotFieldType } from './TemplateSelectModal';
@@ -89,6 +90,11 @@ export default function SlotOptionsSection() {
     setIsTemplateModalOpen(false);
   };
 
+  const handleDownloadTemplate = () => {
+    // TODO: 템플릿 서식 다운로드
+    console.log('템플릿 서식 다운로드');
+  };
+
   const getPlaceholder = (field: { name: string; type: SlotFieldType }) => {
     if (field.type === 'number') return '0';
     if (field.type === 'time') return 'HH:MM';
@@ -121,6 +127,14 @@ export default function SlotOptionsSection() {
               className="border-neutral-border-default text-14 flex items-center gap-1.5 rounded-md border bg-white px-3 py-2 font-medium"
             >
               <TemplateIcon className="h-4 w-4" /> 템플릿 설정
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadTemplate}
+              className="border-neutral-border-default text-14 flex items-center gap-1.5 rounded-md border bg-white px-3 py-2 font-medium"
+            >
+              <DownloadIcon className="h-4 w-4" /> 서식 다운로드
             </button>
 
             <button
