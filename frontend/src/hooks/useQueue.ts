@@ -15,6 +15,8 @@ interface QueueState {
   inQueue: boolean;
   isLoading: boolean;
   error: string | null;
+  isNew: boolean | null;
+  tokenExpiresAt: number | null;
 }
 
 function useQueue({ eventId, enabled = true }: UseQueueOptions) {
@@ -25,6 +27,8 @@ function useQueue({ eventId, enabled = true }: UseQueueOptions) {
     inQueue: false,
     isLoading: true,
     error: null,
+    isNew: null,
+    tokenExpiresAt: null,
   });
 
   const sessionIdRef = useRef<string | null>(null);
@@ -42,6 +46,7 @@ function useQueue({ eventId, enabled = true }: UseQueueOptions) {
         position: result.position,
         inQueue: true,
         isLoading: false,
+        isNew: result.isNew,
       }));
 
       return result;
@@ -67,6 +72,7 @@ function useQueue({ eventId, enabled = true }: UseQueueOptions) {
         inQueue: status.inQueue,
         isLoading: false,
         error: null,
+        tokenExpiresAt: status.tokenExpiresAt,
       }));
       return status;
     } catch (error) {
