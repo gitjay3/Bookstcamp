@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { ApplyReservationDto } from './dto/apply-reservation.dto';
 import { Reservation, Prisma } from '@prisma/client';
+import { QueueService } from 'src/queue/queue.service';
 import {
   ReservationJobData,
   RESERVATION_QUEUE,
@@ -34,6 +35,7 @@ export class ReservationsService {
   constructor(
     private prisma: PrismaService,
     private redisService: RedisService,
+    private queueService: QueueService,
     @InjectQueue(RESERVATION_QUEUE)
     private reservationQueue: Queue<ReservationJobData>,
   ) {}
@@ -64,6 +66,8 @@ export class ReservationsService {
       slotId: dto.slotId,
       maxCapacity: slot.maxCapacity,
     });
+
+    // await this.queueService.invalidateToken(dto.eventId, userId); 지금은 수강신청같은 방식. 1인 1예약이라면 토큰 무효화
 
     // 즉시 응답 (비동기 처리)
     return {

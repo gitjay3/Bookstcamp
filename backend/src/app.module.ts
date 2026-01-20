@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -10,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RedisModule } from './redis/redis.module';
+import { QueueModule } from './queue/queue.module';
 import { BullModule } from '@nestjs/bullmq';
 import { TemplatesModule } from './templates/templates.module';
 import { OrganizationsModule } from './organizations/organizations.module';
@@ -36,6 +38,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
     ReservationsModule,
     EventSlotsModule,
     AuthModule,
+    QueueModule,
     TemplatesModule,
     OrganizationsModule,
   ],

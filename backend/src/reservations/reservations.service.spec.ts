@@ -13,6 +13,7 @@ import {
   UnauthorizedReservationException,
 } from '../../common/exceptions/api.exception';
 import type { ApplyReservationDto } from './dto/apply-reservation.dto';
+import { QueueService } from '../queue/queue.service';
 
 const createRedisMock = () => ({
   initStock: jest.fn().mockResolvedValue(undefined),
@@ -24,22 +25,30 @@ const createQueueMock = () => ({
   add: jest.fn().mockResolvedValue({ id: 'job-123' }),
 });
 
+const createQueueServiceMock = () => ({
+  invalidateToken: jest.fn().mockResolvedValue(undefined),
+  hasValidToken: jest.fn().mockResolvedValue(true),
+});
+
 describe('ReservationsService', () => {
   let service: ReservationsService;
   let prismaMock: ReturnType<typeof createPrismaMock>;
   let redisMock: ReturnType<typeof createRedisMock>;
   let queueMock: ReturnType<typeof createQueueMock>;
+  let queueServiceMock: ReturnType<typeof createQueueServiceMock>;
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
     redisMock = createRedisMock();
     queueMock = createQueueMock();
+    queueServiceMock = createQueueServiceMock();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReservationsService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: RedisService, useValue: redisMock },
+        { provide: QueueService, useValue: queueServiceMock },
         { provide: getQueueToken(RESERVATION_QUEUE), useValue: queueMock },
       ],
     }).compile();
@@ -53,7 +62,7 @@ describe('ReservationsService', () => {
 
   describe('apply', () => {
     const userId = 'user-123';
-    const dto: ApplyReservationDto = { slotId: 1 };
+    const dto: ApplyReservationDto = { eventId: 1, slotId: 1 };
 
     it('예약을 큐에 성공적으로 등록한다', async () => {
       const mockSlot = {
