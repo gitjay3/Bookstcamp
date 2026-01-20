@@ -1,15 +1,15 @@
-import ModifyIcon from '@/assets/icons/pencil.svg?react';
-import RemoveIcon from '@/assets/icons/trash.svg?react';
-import EventCategoryLabel from '@/components/EventCategoryLabel';
 import type { Camper } from '@/types/camper';
-import RegistrationLabel from './RegistrationLabel';
+import CamperAddRow from './CamperAddRow';
+import CamperRow from './CamperRow';
 
 interface CamperListTableProps {
   campers: Camper[];
+  onAdd: (camper: Omit<Camper, 'id' | 'status'>) => void;
+  onUpdate: (id: string, data: Partial<Omit<Camper, 'id' | 'status'>>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-
-function CamperListTable({ campers }: CamperListTableProps) {
+function CamperListTable({ campers, onAdd, onUpdate, onDelete }: CamperListTableProps) {
   return (
     <div className="w-full">
       <table className="w-full table-fixed text-left">
@@ -37,26 +37,14 @@ function CamperListTable({ campers }: CamperListTableProps) {
         </thead>
         <tbody className="divide-neutral-border-default text-neutral-text-secondary divide-y bg-white">
           {campers.map((camper) => (
-            <tr key={camper.id}>
-              <td className="px-6 py-4 font-medium whitespace-nowrap">{camper.camperId}</td>
-              <td className="px-6 py-4">{camper.name}</td>
-              <td className="px-6 py-4">{camper.username}</td>
-              <td className="px-6 py-4">
-                <div className="flex">
-                  <EventCategoryLabel category={camper.track} />
-                </div>
-              </td>
-              <td className="px-6 py-4">
-               <RegistrationLabel status={camper.status} />
-              </td>
-              <td className="px-6 py-4 text-right">
-                <div className="flex justify-end gap-4">
-                  <ModifyIcon className="h-4 w-4 cursor-pointer" />
-                  <RemoveIcon className="text-error-text-primary h-4 w-4 cursor-pointer" />
-                </div>
-              </td>
-            </tr>
+            <CamperRow
+              key={camper.id}
+              camper={camper}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
           ))}
+          <CamperAddRow onAdd={onAdd} />
         </tbody>
       </table>
     </div>
