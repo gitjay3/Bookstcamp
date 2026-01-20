@@ -4,6 +4,7 @@ import {
   Role,
   AuthProvider,
   ApplicationUnit,
+  PreRegStatus,
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -73,6 +74,86 @@ async function main() {
 
   console.log('✓ 테스트 사용자 생성:', testUser.user.id);
 
+  console.log('✓ 테스트 사용자 생성:', testUser.user.id);
+
+  // 3-1. 조직(Organization) 생성
+  const organization = await prisma.organization.create({
+    data: {
+      name: '부스트캠프 10기 웹 풀스택 멤버십',
+    },
+  });
+  console.log('✓ 조직 생성:', organization.name);
+
+  // 3-2. 사전 등록(PreRegistration) 데이터 생성
+  // (1) 미가입 유저 (INVITED)
+  await prisma.camperPreRegistration.create({
+    data: {
+      organizationId: organization.id,
+      camperId: 'J283',
+      name: '한지은',
+      username: 'hanpengbutt',
+      track: Track.WEB,
+      status: PreRegStatus.INVITED,
+    },
+  });
+
+  await prisma.camperPreRegistration.create({
+    data: {
+      organizationId: organization.id,
+      camperId: 'J049',
+      name: '김시영',
+      username: 'wfs0502',
+      track: Track.WEB,
+      status: PreRegStatus.INVITED,
+    },
+  });
+
+  await prisma.camperPreRegistration.create({
+    data: {
+      organizationId: organization.id,
+      camperId: 'J116',
+      name: '박재성',
+      username: 'gitjay3',
+      track: Track.WEB,
+      status: PreRegStatus.INVITED,
+    },
+  });
+
+  await prisma.camperPreRegistration.create({
+    data: {
+      organizationId: organization.id,
+      camperId: 'J248',
+      name: '정희재',
+      username: 'RainWhales',
+      track: Track.WEB,
+      status: PreRegStatus.INVITED,
+    },
+  });
+
+  // (2) 탈퇴/재가입 시나리오 등을 위한 가입 유저 (CLAIMED) - 시드에서는 테스트용으로 미리 연결해둘 수도 있음
+  // 여기서는 로직 테스트를 위해 'testuser'를 위한 사전등록 데이터를 생성해둡니다.
+  await prisma.camperPreRegistration.create({
+    data: {
+      organizationId: organization.id,
+      camperId: 'J999',
+      name: '테스트 사용자',
+      username: '12345678',
+      track: Track.ANDROID,
+      status: PreRegStatus.CLAIMED,
+      claimedUserId: testUser.user.id,
+    },
+  });
+
+  // 이미 CLAIMED 상태니까 CamperOrganization도 연결해줌
+  await prisma.camperOrganization.create({
+    data: {
+      userId: testUser.user.id,
+      organizationId: organization.id,
+    },
+  });
+
+  console.log('✓ 사전 등록 데이터 생성 완료');
+
   // 4. 이벤트 생성
   const event1 = await prisma.event.upsert({
     where: { id: 1 },
@@ -85,6 +166,7 @@ async function main() {
       track: Track.WEB,
       applicationUnit: ApplicationUnit.TEAM,
       creatorId: adminUserId,
+      organizationId: organization.id,
       startTime: new Date('2026-01-01T00:00:00+09:00'),
       endTime: new Date('2026-02-28T23:59:59+09:00'),
       slotSchema: {
@@ -110,6 +192,7 @@ async function main() {
       track: Track.ANDROID,
       applicationUnit: ApplicationUnit.INDIVIDUAL,
       creatorId: adminUserId,
+      organizationId: organization.id,
       startTime: new Date('2026-03-01T00:00:00+09:00'),
       endTime: new Date('2026-03-31T23:59:59+09:00'),
       slotSchema: {
@@ -135,6 +218,7 @@ async function main() {
       track: Track.IOS,
       applicationUnit: ApplicationUnit.INDIVIDUAL,
       creatorId: adminUserId,
+      organizationId: organization.id,
       startTime: new Date('2026-04-01T00:00:00+09:00'),
       endTime: new Date('2026-04-30T23:59:59+09:00'),
       slotSchema: {
