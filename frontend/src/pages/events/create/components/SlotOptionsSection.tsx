@@ -10,7 +10,12 @@ import SectionCard from './SectionCard';
 type SlotFieldType = 'text' | 'number' | 'time';
 
 export default function SlotOptionsSection() {
-  const { register, control, watch } = useFormContext<EventFormValues>();
+  const {
+    register,
+    control,
+    watch,
+    formState: { errors },
+  } = useFormContext<EventFormValues>();
 
   const templateFields = (watch('slotSchema.fields') || []) as Array<{
     id: string;
@@ -26,19 +31,30 @@ export default function SlotOptionsSection() {
   const getPlaceholder = (field: { name: string; type: SlotFieldType }) => {
     if (field.type === 'number') return '0';
     if (field.type === 'time') return 'HH:MM';
-    return `예) ${field.name}`;
+    return `${field.name} 입력`;
   };
 
   const blockNegativeKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // number input에서 음수 입력을 유도하는 키 방지
     if (e.key === '-' || e.key === 'e' || e.key === 'E') {
       e.preventDefault();
     }
   };
 
+  const showSlotsError = Array.isArray(errors.slots)
+    ? errors.slots.some(Boolean)
+    : Boolean(errors.slots);
+
   return (
     <SectionCard title="선택지 목록" description="사용자가 선택할 수 있는 옵션을 등록하세요.">
-      <div className="mb-4 flex items-end justify-end">
+      <div className="mb-4 flex items-end justify-between">
+        <div className="min-h-4">
+          {showSlotsError && (
+            <p className="text-12 text-error-text-primary font-medium">
+              선택지의 모든 값을 입력해주세요.
+            </p>
+          )}
+        </div>
+
         <div className="flex gap-2">
           <button
             type="button"
@@ -126,7 +142,7 @@ export default function SlotOptionsSection() {
         </table>
 
         {fields.length === 0 && (
-          <div className="text-14 text-neutral-text-tertiary py-12 text-center">
+          <div className="text-12 text-error-text-primary py-12 text-center font-medium">
             등록된 선택지가 없습니다. &apos;선택지 추가&apos; 버튼을 눌러주세요.
           </div>
         )}
