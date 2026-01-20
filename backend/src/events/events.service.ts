@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
-import { Track } from '@prisma/client';
+import { Track, Event, EventSlot } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+
+type EventWithSlots = Event & { slots: EventSlot[] };
 
 @Injectable()
 export class EventsService {
@@ -21,10 +23,11 @@ export class EventsService {
       startTime,
       endTime,
       slotSchema,
+      organizationId,
       slots,
     } = dto;
 
-    const event = await this.prisma.event.create({
+    const event = (await this.prisma.event.create({
       data: {
         title,
         description,
@@ -34,6 +37,7 @@ export class EventsService {
         endTime,
         slotSchema,
         creatorId,
+        organizationId,
 
         slots: {
           create: slots.map((slot) => ({
@@ -45,7 +49,7 @@ export class EventsService {
       include: {
         slots: true,
       },
-    });
+    })) as EventWithSlots;
 
     await Promise.all(
       event.slots.map((slot) =>
@@ -56,14 +60,18 @@ export class EventsService {
     return event;
   }
 
-  async findAll(track?: string) {
+  async findAll(track?: string, organizationId?: string) {
     const parsedTrack = this.parseTrack(track);
 
     return this.prisma.event.findMany({
-      where:
-        parsedTrack && parsedTrack !== Track.COMMON
-          ? { track: parsedTrack }
-          : undefined,
+      where: {
+        AND: [
+          parsedTrack && parsedTrack !== Track.COMMON
+            ? { track: parsedTrack }
+            : {},
+          organizationId ? { organizationId } : {},
+        ],
+      },
       orderBy: { startTime: 'asc' },
       select: {
         id: true,

@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router';
 import { Toaster } from 'sonner';
 import Layout from './Layout';
 import Main from './pages/main/Main';
@@ -8,6 +8,8 @@ import CamperMyPage from './pages/camper-mypage/CamperMyPage';
 import LoginPage from './pages/auth/LoginPage';
 import RootProviders from './RootProvider';
 import ProtectedRoute from './ProtectedRoute';
+import SelectOrgPage from './pages/auth/select-org/SelectOrgPage';
+import OrgLayout from './OrgLayout';
 import EventCreatePage from './pages/events/create/EventCreatePage';
 
 const router = createBrowserRouter([
@@ -18,17 +20,23 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
+          { path: '/', element: <Navigate to="/select-org" replace /> },
+          { path: '/select-org', element: <SelectOrgPage /> },
           {
-            element: <Layout />,
+            path: '/orgs/:orgId',
+            element: <OrgLayout />,
             children: [
-              { path: '/', element: <Main /> },
-              { path: '/events/:id', element: <EventDetail /> },
-              { path: '/me', element: <CamperMyPage /> },
               {
-                element: <ProtectedRoute allowedRoles={['ADMIN']} />,
+                element: <Layout />,
                 children: [
-                  { path: '/templates', element: <ManageTemplate /> },
-                  { path: '/events/new', element: <EventCreatePage /> },
+                  { path: '', element: <Main /> },
+                  { path: 'events/:id', element: <EventDetail /> },
+                  { path: 'events/new', element: <EventCreatePage /> },
+                  { path: 'me', element: <CamperMyPage /> },
+                  {
+                    element: <ProtectedRoute allowedRoles={['ADMIN']} />,
+                    children: [{ path: 'templates', element: <ManageTemplate /> }],
+                  },
                 ],
               },
             ],
