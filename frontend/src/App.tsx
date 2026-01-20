@@ -10,6 +10,7 @@ import RootProviders from './RootProvider';
 import ProtectedRoute from './ProtectedRoute';
 import SelectOrgPage from './pages/auth/select-org/SelectOrgPage';
 import OrgLayout from './OrgLayout';
+import EventCreatePage from './pages/events/create/EventCreatePage';
 
 const router = createBrowserRouter([
   {
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
                 children: [
                   { path: '', element: <Main /> },
                   { path: 'events/:id', element: <EventDetail /> },
+                  { path: 'events/new', element: <EventCreatePage /> },
                   { path: 'me', element: <CamperMyPage /> },
                   {
                     element: <ProtectedRoute allowedRoles={['ADMIN']} />,
