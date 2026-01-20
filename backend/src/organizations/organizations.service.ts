@@ -5,7 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Role, PreRegStatus, Track } from '@prisma/client';
+import {
+  Role,
+  PreRegStatus,
+  Track,
+  CamperPreRegistration,
+} from '@prisma/client';
 import { CreateCamperDto } from './dto/create-camper.dto';
 import { UpdateCamperDto } from './dto/update-camper.dto';
 import { Workbook } from 'exceljs';
@@ -63,23 +68,36 @@ export class OrganizationsService {
   }
 
   async createCamper(organizationId: string, dto: CreateCamperDto) {
-    const existingCamper = await this.prisma.camperPreRegistration.findFirst({
-      where: {
-        organizationId,
-        OR: [{ camperId: dto.camperId }, { username: dto.username }],
-      },
-    });
+    const existingActiveCamper =
+      await this.prisma.camperPreRegistration.findFirst({
+        where: {
+          organizationId,
+          status: { not: PreRegStatus.REVOKED },
+          OR: [{ camperId: dto.camperId }, { username: dto.username }],
+        },
+      });
 
-    if (existingCamper) {
+    if (existingActiveCamper) {
       const field =
-        existingCamper.camperId === dto.camperId
+        existingActiveCamper.camperId === dto.camperId
           ? '부스트캠프 ID'
           : 'GitHub ID';
       throw new ConflictException(`이미 해당 조직에 등록된 ${field}입니다.`);
     }
 
-    const newCamper = await this.prisma.camperPreRegistration.create({
-      data: {
+    // REVOKED 상태인 데이터가 있을 수 있으므로 upsert 사용
+    const newCamper = await this.prisma.camperPreRegistration.upsert({
+      where: {
+        organizationId_camperId: {
+          organizationId,
+          camperId: dto.camperId,
+        },
+      },
+      update: {
+        ...dto,
+        status: PreRegStatus.INVITED, // 다시 초대됨 상태로 변경
+      },
+      create: {
         ...dto,
         organizationId,
         status: PreRegStatus.INVITED,
@@ -106,12 +124,13 @@ export class OrganizationsService {
       throw new NotFoundException('캠퍼 정보를 찾을 수 없습니다.');
     }
 
-    // 중복 체크 (본인 제외)
+    // 중복 체크 (본인 제외, REVOKED 제외)
     if (dto.camperId || dto.username) {
       const conflict = await this.prisma.camperPreRegistration.findFirst({
         where: {
           organizationId: orgId,
           id: { not: id },
+          status: { not: PreRegStatus.REVOKED },
           OR: [
             dto.camperId ? { camperId: dto.camperId } : {},
             dto.username ? { username: dto.username } : {},
@@ -207,7 +226,7 @@ export class OrganizationsService {
 
   async uploadCampers(organizationId: string, fileBuffer: Buffer) {
     const workbook = new Workbook();
-    // Buffer type mismatch fix: Buffer.from or cast to any
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await workbook.xlsx.load(fileBuffer as any);
 
     const worksheet = workbook.getWorksheet(1);
@@ -242,7 +261,7 @@ export class OrganizationsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const results: any[] = [];
+      const results: CamperPreRegistration[] = [];
       for (const data of campersData) {
         // 부스트캠프 ID(camperId)를 기준으로 Upsert
         const result = await tx.camperPreRegistration.upsert({
@@ -256,6 +275,7 @@ export class OrganizationsService {
             name: data.name,
             username: data.username,
             track: data.track,
+            status: PreRegStatus.INVITED, // 업로드 시 재활성화
           },
           create: {
             ...data,
