@@ -33,7 +33,6 @@ export default function EventCreatePage() {
           { id: 'f_1', name: '시간', type: 'time' },
           { id: 'f_2', name: '장소', type: 'text' },
           { id: 'f_3', name: '멘토', type: 'text' },
-          { id: 'f_4', name: '정원', type: 'number' },
         ];
 
         methods.reset({
