@@ -1,25 +1,42 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router';
+import { toast } from 'sonner';
 import PageHeader from '@/components/PageHeader';
 import Button from '@/components/Button';
 import PlusIcon from '@/assets/icons/plus.svg?react';
 import DownloadIcon from '@/assets/icons/download.svg?react';
 import type { Camper } from '@/types/camper';
+import { getCampers, createCamper } from '@/api/organization';
 import CamperListTable from './components/CamperListTable';
 import CamperAddTable from './components/CamperAddTable';
 
-// Initial mock data
-const INITIAL_CAMPERS: Camper[] = [
-  { id: 'J001', name: '김철수', githubId: 'kim-chul', track: 'WEB' },
-  { id: 'J002', name: '이영희', githubId: 'lee-young', track: 'ANDROID' },
-  { id: 'J283', name: '한지은', githubId: 'hanpengbutt', track: 'IOS' },
-];
-
 function ManageCamper() {
-  const [campers, setCampers] = useState<Camper[]>(INITIAL_CAMPERS);
+  const { orgId } = useParams<{ orgId: string }>();
+  const [campers, setCampers] = useState<Camper[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAddCamper = (newCamper: Camper) => {
+  useEffect(() => {
+    if (orgId) {
+      setIsLoading(true);
+
+      (async () => {
+        setCampers(await getCampers(orgId));
+        setIsLoading(false);
+      })();
+    }
+  }, [orgId]);
+
+  const handleAddCamper = async (newCamperData: Omit<Camper, 'id' | 'status'>) => {
+    if (!orgId) return;
+
+    const newCamper = await createCamper(orgId, newCamperData);
     setCampers((prev) => [...prev, newCamper]);
+    toast.success('캠퍼가 성공적으로 추가되었습니다.');
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col gap-8">

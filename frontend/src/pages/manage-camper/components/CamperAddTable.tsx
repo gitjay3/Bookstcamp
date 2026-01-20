@@ -4,27 +4,39 @@ import Button from '@/components/Button';
 import Dropdown from '@/components/Dropdown';
 import TextInput from '@/components/TextInput';
 import type { Track } from '@/types/event';
-import { trackOptions, type Camper } from '../../../types/camper';
+import { trackOptions, type Camper } from '@/types/camper';
 
 interface CamperAddTableProps {
-  onAdd: (camper: Camper) => void;
+  onAdd: (camper: Omit<Camper, 'id' | 'status'>) => void;
 }
 
 function CamperAddTable({ onAdd }: CamperAddTableProps) {
-  const [newId, setNewId] = useState('');
+  const [newCamperId, setNewCamperId] = useState('');
   const [newName, setNewName] = useState('');
-  const [newGithubId, setNewGithubId] = useState('');
+  const [newUsername, setNewUsername] = useState('');
   const [newTrack, setNewTrack] = useState<Track>('WEB');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isInvalid = !newId || !newName || !newGithubId;
+  const isInvalid = !newCamperId || !newName || !newUsername || isSubmitting;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (isInvalid) return;
-    onAdd({ id: newId, name: newName, githubId: newGithubId, track: newTrack });
-    setNewId('');
-    setNewName('');
-    setNewGithubId('');
-    setNewTrack('WEB');
+
+    setIsSubmitting(true);
+    try {
+      await onAdd({
+        camperId: newCamperId,
+        name: newName,
+        username: newUsername,
+        track: newTrack,
+      });
+      setNewCamperId('');
+      setNewName('');
+      setNewUsername('');
+      setNewTrack('WEB');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -36,8 +48,8 @@ function CamperAddTable({ onAdd }: CamperAddTableProps) {
               <TextInput
                 aria-label="부스트캠프 ID"
                 placeholder="부스트캠프 ID"
-                value={newId}
-                onChange={(e) => setNewId(e.target.value)}
+                value={newCamperId}
+                onChange={(e) => setNewCamperId(e.target.value)}
               />
             </td>
             <td className="px-6 py-4">
@@ -52,8 +64,8 @@ function CamperAddTable({ onAdd }: CamperAddTableProps) {
               <TextInput
                 aria-label="GitHub ID"
                 placeholder="GitHub ID"
-                value={newGithubId}
-                onChange={(e) => setNewGithubId(e.target.value)}
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
               />
             </td>
             <td className="px-6 py-4">
@@ -64,10 +76,11 @@ function CamperAddTable({ onAdd }: CamperAddTableProps) {
                 className="w-full"
               />
             </td>
+            <td className="px-6 py-4" aria-hidden="true" />
             <td className="px-6 py-4 text-right">
               <div className="flex justify-end">
                 <div className="w-20">
-                  <Button onClickHandler={handleAdd} disabled={isInvalid}>
+                  <Button disabled={isInvalid} onClickHandler={handleAdd}>
                     <PlusIcon className="h-4 w-4" />
                     추가
                   </Button>

@@ -1,10 +1,14 @@
 import type { Track } from '@/types/event';
 
+export type RegistrationStaus = 'INVITED' | 'CLAIMED'
+
 export interface Camper {
   id: string;
+  camperId: string;
   name: string;
-  githubId: string;
+  username: string;
   track: Track;
+  status: RegistrationStaus;
 }
 
 export const trackOptions: { key: Track; label: string }[] = [
