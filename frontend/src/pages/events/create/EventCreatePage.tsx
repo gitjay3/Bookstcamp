@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import PageHeader from '@/components/PageHeader';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
+import toISODateTime from '@/utils/date';
+import { createEvent } from '@/api/event';
 import { eventSchema, type EventFormValues } from './schema';
 import BasicInfoSection from './components/BasicInfoSection';
 import ScheduleSection from './components/ScheduleSection';
@@ -10,14 +12,22 @@ import SlotOptionsSection from './components/SlotOptionsSection';
 
 export default function EventCreatePage() {
   const navigate = useNavigate();
+  const { orgId } = useParams<{ orgId: string }>();
   const [isLoading, setIsLoading] = useState(true);
+
+  if (!orgId) {
+    throw new Error('organizationI가이 없습니다.');
+  }
 
   const methods = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       track: 'COMMON',
-      applyType: 'INDIVIDUAL',
+      applicationUnit: 'INDIVIDUAL',
       title: '',
+      description: '',
+      openDate: '',
+      closeDate: '',
       openTime: '10:00',
       closeTime: '18:00',
       slotSchema: { fields: [] },
@@ -35,10 +45,10 @@ export default function EventCreatePage() {
           { id: 'f_3', name: '멘토', type: 'text' },
         ];
 
-        methods.reset({
-          ...methods.getValues(),
+        methods.reset((prev) => ({
+          ...prev,
           slotSchema: { fields: mockFieldsFromBackend },
-        });
+        }));
       } finally {
         setIsLoading(false);
       }
@@ -47,9 +57,46 @@ export default function EventCreatePage() {
     fetchTemplate();
   }, [methods]);
 
-  const onSubmit = (data: EventFormValues) => {
-    // TODO: API 전송
-    console.log('최종 전송 데이터:', data);
+  const onSubmit = async (data: EventFormValues) => {
+    const startTime = toISODateTime(data.openDate, data.openTime);
+    const endTime = toISODateTime(data.closeDate, data.closeTime);
+
+    if (!startTime || !endTime) return;
+
+    const allowedFieldIds = new Set(data.slotSchema.fields.map((f) => f.id));
+
+    const normalizedSlots = data.slots.map((slot) => {
+      const extraInfo: Record<string, unknown> = {};
+
+      Object.entries(slot).forEach(([k, v]) => {
+        if (allowedFieldIds.has(k)) extraInfo[k] = v;
+      });
+
+      const capacityRaw = (slot as Record<string, unknown>).capacity;
+      const maxCapacity = Number(capacityRaw ?? 1);
+
+      return {
+        maxCapacity,
+        extraInfo,
+      };
+    });
+
+    const payload = {
+      organizationId: orgId,
+      track: data.track,
+      applicationUnit: data.applicationUnit,
+      title: data.title,
+      description: data.description,
+      startTime,
+      endTime,
+      slotSchema: data.slotSchema,
+      slots: normalizedSlots,
+    };
+
+    const created = await createEvent(payload);
+
+    // ✅ org 컨텍스트 유지해서 이동
+    navigate(`/orgs/${orgId}/events/${created.id}`);
   };
 
   if (isLoading) return <div>로딩 중...</div>;

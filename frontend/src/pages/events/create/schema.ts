@@ -4,7 +4,7 @@ export const eventSchema = z
   .object({
     // 기본 정보
     track: z.enum(['ALL', 'COMMON', 'WEB', 'ANDROID', 'IOS']),
-    applyType: z.enum(['INDIVIDUAL', 'TEAM']),
+    applicationUnit: z.enum(['INDIVIDUAL', 'TEAM']),
     title: z.string().min(1, '제목을 입력해주세요.'),
     description: z.string().optional(),
 
