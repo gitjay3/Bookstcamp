@@ -1,3 +1,4 @@
+import React from 'react';
 import type { EventSlot, SlotSchema, Status } from '@/types/event';
 import Slot from './Slot';
 
@@ -20,17 +21,27 @@ function SlotList({
 }: SlotListProps) {
   const fields = slotSchema.fields ?? [];
 
+  // 그리드 컬럼 (필드 개수 + 상태 열)
+  const gridLayout = {
+    gridTemplateColumns: `repeat(${fields.length}, 1fr) 40px`,
+  };
+
   return (
-    <div className="flex flex-col gap-3">
-      <h3 className="text-20 font-bold">예약 옵션</h3>
-      <div className="text-12 flex items-center gap-1">
-        {fields.map((field, idx) => (
-          <div key={field.id} className="flex items-center gap-1">
-            <div className="text-neutral-text-secondary">{field.name}</div>
-            {idx < fields.length - 1 && <div className="text-neutral-border-default">|</div>}
+    <div className="flex flex-col gap-1">
+      {/* 테이블 헤더 영역 */}
+      <div
+        className="text-14 text-neutral-text-tertiary grid items-center px-6 py-3 font-bold"
+        style={gridLayout}
+      >
+        {fields.map((field) => (
+          <div key={field.id} className="text-left">
+            {field.name}
           </div>
         ))}
+        <div className="text-center">상태</div>
       </div>
+
+      {/* 슬롯 리스트 영역 */}
       <div className="flex flex-col gap-3">
         {slots.map((slot) => (
           <Slot
@@ -40,6 +51,7 @@ function SlotList({
             fields={fields}
             selectedSlotId={selectedSlotId}
             setSelectedSlotId={setSelectedSlotId}
+            gridLayout={gridLayout}
           />
         ))}
       </div>

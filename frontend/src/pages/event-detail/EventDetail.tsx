@@ -156,7 +156,7 @@ function EventDetail() {
 
   return (
     <div className="flex justify-center">
-      <div className="w-160">
+      <div className="w-200">
         <div className="flex flex-col gap-6">
           <EventDetailHeader
             category={event.track}
