@@ -87,7 +87,9 @@ export class AuthService {
       // (1) User & AuthAccount 생성
       const newUser = await tx.user.create({
         data: {
-          name: data.name,
+          username: data.githubLogin, // GitHub username 저장
+          name: preRegistrations[0]?.name || null, // 사전 등록된 실명 (없으면 null)
+          camperId: preRegistrations[0]?.camperId || null, // 부스트캠프 ID (없으면 null)
           role: Role.USER,
           authAccounts: {
             create: {

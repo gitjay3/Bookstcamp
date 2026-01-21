@@ -38,6 +38,7 @@ export class OrganizationsService {
       });
     }
 
+    // 1. 이미 CLAIMED 하여 CamperOrganization에 등록된 조직
     const userOrganizations = await this.prisma.camperOrganization.findMany({
       where: { userId },
       include: {
@@ -45,7 +46,38 @@ export class OrganizationsService {
       },
     });
 
-    return userOrganizations.map((uo) => uo.organization);
+    const claimedOrgIds = new Set(
+      userOrganizations.map((uo) => uo.organizationId),
+    );
+    const organizations = [...userOrganizations.map((uo) => uo.organization)];
+
+    // 2. 로그인은 했고 PreRegistration에는 등록되었으나 아직 CLAIMED 하지 않은 조직 탐색
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true },
+    });
+
+    if (user?.username) {
+      const preRegOrgs = await this.prisma.camperPreRegistration.findMany({
+        where: {
+          username: user.username,
+          status: PreRegStatus.INVITED, // 아직 등록 안된 초대장만
+          organizationId: { notIn: Array.from(claimedOrgIds) },
+        },
+        include: {
+          organization: true,
+        },
+      });
+
+      preRegOrgs.forEach((pre) => {
+        if (!claimedOrgIds.has(pre.organizationId)) {
+          organizations.push(pre.organization);
+          claimedOrgIds.add(pre.organizationId);
+        }
+      });
+    }
+
+    return organizations;
   }
 
   async findCampers(organizationId: string) {
@@ -112,7 +144,59 @@ export class OrganizationsService {
       },
     });
 
-    return newCamper;
+    // 해당 GitHub username을 가진 User가 이미 가입되어 있는지 확인
+    const user = await this.prisma.user.findUnique({
+      where: { username: dto.username },
+    });
+
+    // 사용자가 가입되어 있다면 정보 업데이트 및 조직 연결
+    let finalCamper = newCamper;
+    if (user) {
+      finalCamper = await this.prisma.$transaction(async (tx) => {
+        // User 정보 업데이트 (name, camperId)
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            name: dto.name,
+            camperId: dto.camperId,
+          },
+        });
+
+        // CamperOrganization 생성 (이미 있으면 무시)
+        await tx.camperOrganization.upsert({
+          where: {
+            userId_organizationId: {
+              userId: user.id,
+              organizationId,
+            },
+          },
+          update: {},
+          create: {
+            userId: user.id,
+            organizationId,
+          },
+        });
+
+        // PreRegistration 상태 업데이트 후 최신 데이터 반환
+        return tx.camperPreRegistration.update({
+          where: { id: newCamper.id },
+          data: {
+            status: PreRegStatus.CLAIMED,
+            claimedUserId: user.id,
+          },
+          select: {
+            id: true,
+            camperId: true,
+            name: true,
+            username: true,
+            track: true,
+            status: true,
+          },
+        });
+      });
+    }
+
+    return finalCamper;
   }
 
   async updateCamper(orgId: string, id: string, dto: UpdateCamperDto) {
@@ -262,6 +346,17 @@ export class OrganizationsService {
 
     return this.prisma.$transaction(async (tx) => {
       const results: CamperPreRegistration[] = [];
+
+      // 모든 관련 사용자 정보를 한 번에 조회하여 성능 최적화
+      const usernames = campersData.map((d) => d.username);
+      const existingUsers = await tx.user.findMany({
+        where: { username: { in: usernames } },
+        select: { id: true, username: true },
+      });
+      const userMap = new Map(
+        existingUsers.map((u) => [u.username, u.id]),
+      );
+
       for (const data of campersData) {
         // 부스트캠프 ID(camperId)를 기준으로 Upsert
         const result = await tx.camperPreRegistration.upsert({
@@ -283,6 +378,45 @@ export class OrganizationsService {
             status: PreRegStatus.INVITED,
           },
         });
+
+        const userId = userMap.get(data.username);
+
+        // 사용자가 이미 가입되어 있다면 정보 업데이트 및 조직 연결
+        if (userId) {
+          // User 정보 업데이트
+          await tx.user.update({
+            where: { id: userId },
+            data: {
+              name: data.name,
+              camperId: data.camperId,
+            },
+          });
+
+          // CamperOrganization 생성
+          await tx.camperOrganization.upsert({
+            where: {
+              userId_organizationId: {
+                userId,
+                organizationId,
+              },
+            },
+            update: {},
+            create: {
+              userId,
+              organizationId,
+            },
+          });
+
+          // PreRegistration 상태 업데이트
+          await tx.camperPreRegistration.update({
+            where: { id: result.id },
+            data: {
+              status: PreRegStatus.CLAIMED,
+              claimedUserId: userId,
+            },
+          });
+        }
+
         results.push(result);
       }
       return results;
