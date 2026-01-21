@@ -28,6 +28,9 @@ function CamperListTable({ campers, onAdd, onUpdate, onDelete }: CamperListTable
               분야
             </th>
             <th scope="col" className="px-6 py-3 font-medium">
+              그룹 번호
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
               가입 여부
             </th>
             <th scope="col" className="px-6 py-3 text-right font-medium">

@@ -21,6 +21,7 @@ function CamperRow({ camper, onUpdate, onDelete }: CamperRowProps) {
   const [editedName, setEditedName] = useState(camper.name);
   const [editedUsername, setEditedUsername] = useState(camper.username);
   const [editedTrack, setEditedTrack] = useState<Track>(camper.track as Track);
+  const [editedGroupNumber, setEditedGroupNumber] = useState(camper.groupNumber?.toString() || '');
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -33,6 +34,7 @@ function CamperRow({ camper, onUpdate, onDelete }: CamperRowProps) {
     setEditedName(camper.name);
     setEditedUsername(camper.username);
     setEditedTrack(camper.track as Track);
+    setEditedGroupNumber(camper.groupNumber?.toString() || '');
   };
 
   const handleSave = async () => {
@@ -43,6 +45,7 @@ function CamperRow({ camper, onUpdate, onDelete }: CamperRowProps) {
         name: editedName,
         username: editedUsername,
         track: editedTrack,
+        groupNumber: editedGroupNumber ? parseInt(editedGroupNumber, 10) : null,
       });
       setIsEditing(false);
     } catch (error) {
@@ -79,6 +82,8 @@ function CamperRow({ camper, onUpdate, onDelete }: CamperRowProps) {
           setUsername={setEditedUsername}
           track={editedTrack}
           setTrack={setEditedTrack}
+          groupNumber={editedGroupNumber}
+          setGroupNumber={setEditedGroupNumber}
         />
         <td className="px-6">
           <div className="flex h-10 items-center">
@@ -118,6 +123,9 @@ function CamperRow({ camper, onUpdate, onDelete }: CamperRowProps) {
         <div className="flex h-10 items-center">
           <EventCategoryLabel category={camper.track} />
         </div>
+      </td>
+      <td className="px-6">
+        <div className="flex h-10 items-center">{camper.groupNumber}</div>
       </td>
       <td className="px-6">
         <div className="flex h-10 items-center">

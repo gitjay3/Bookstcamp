@@ -11,6 +11,7 @@ export interface Camper {
   username: string;
   track: Track;
   status: RegistrationStaus;
+  groupNumber: number | null;
 }
 
 export const trackOptions: { key: Track; label: string }[] = [

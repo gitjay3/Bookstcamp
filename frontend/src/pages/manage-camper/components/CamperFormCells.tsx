@@ -12,6 +12,8 @@ interface CamperFormCellsProps {
   setUsername: (value: string) => void;
   track: Track;
   setTrack: (value: Track) => void;
+  groupNumber: string;
+  setGroupNumber: (value: string) => void;
 }
 
 function CamperFormCells({
@@ -23,6 +25,8 @@ function CamperFormCells({
   setUsername,
   track,
   setTrack,
+  groupNumber,
+  setGroupNumber,
 }: CamperFormCellsProps) {
   return (
     <>
@@ -52,6 +56,15 @@ function CamperFormCells({
       </td>
       <td className="px-6">
         <Dropdown options={trackOptions} value={track} setValue={setTrack} className="w-full" />
+      </td>
+      <td className="px-6">
+        <TextInput
+          placeholder="그룹 번호"
+          aria-label="그룹 번호"
+          value={groupNumber}
+          onChange={(e) => setGroupNumber(e.target.value)}
+          type="number"
+        />
       </td>
     </>
   );

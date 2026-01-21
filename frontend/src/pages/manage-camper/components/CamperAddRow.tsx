@@ -13,6 +13,7 @@ function CamperAddRow({ onAdd }: CamperAddRowProps) {
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newTrack, setNewTrack] = useState<Track>('WEB');
+  const [newGroupNumber, setNewGroupNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isInvalid = !newCamperId || !newName || !newUsername || isSubmitting;
@@ -27,11 +28,13 @@ function CamperAddRow({ onAdd }: CamperAddRowProps) {
         name: newName,
         username: newUsername,
         track: newTrack,
+        groupNumber: newGroupNumber ? parseInt(newGroupNumber, 10) : null,
       });
       setNewCamperId('');
       setNewName('');
       setNewUsername('');
       setNewTrack('WEB');
+      setNewGroupNumber('');
     } finally {
       setIsSubmitting(false);
     }
@@ -48,6 +51,8 @@ function CamperAddRow({ onAdd }: CamperAddRowProps) {
         setUsername={setNewUsername}
         track={newTrack}
         setTrack={setNewTrack}
+        groupNumber={newGroupNumber}
+        setGroupNumber={setNewGroupNumber}
       />
       <td className="px-6" aria-hidden="true" />
       <td className="px-6 text-right">
