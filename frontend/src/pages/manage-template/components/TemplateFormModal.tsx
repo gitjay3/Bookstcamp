@@ -153,6 +153,20 @@ function TemplateFormModal({ isOpen, onClose, onSave, template }: TemplateFormMo
               <div className="w-10" />
             </div>
 
+            {/* 정원 기본 필드 (고정) */}
+            <div className="border-neutral-border-default flex items-center border-b bg-gray-50/50">
+              <div className="text-neutral-text-tertiary w-12 px-3 py-2 text-center text-14">
+                -
+              </div>
+              <div className="flex flex-1 items-center gap-2 px-3 py-2">
+                <span className="text-neutral-text-secondary text-14">정원</span>
+              </div>
+              <div className="w-44 px-3 py-2">
+                <span className="text-neutral-text-tertiary text-14">숫자</span>
+              </div>
+              <div className="w-10" />
+            </div>
+
             {/* 필드 행들 */}
             {fields.map((field, index) => (
               <div
