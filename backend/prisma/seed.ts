@@ -67,7 +67,6 @@ async function main() {
         create: {
           username: 'testuser',
           name: '테스트 사용자',
-          camperId: 'J999',
           role: Role.USER,
         },
       },
@@ -152,6 +151,7 @@ async function main() {
     data: {
       userId: testUser.user.id,
       organizationId: organization.id,
+      camperId: 'J999',
     },
   });
 
