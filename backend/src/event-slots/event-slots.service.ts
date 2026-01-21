@@ -1,5 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UpdateEventSlotDto } from './dto/update-event-slot.dto';
+import { CreateEventSlotDto } from './dto/create-event-slot.dto';
 
 @Injectable()
 export class EventSlotsService {
@@ -84,5 +91,65 @@ export class EventSlotsService {
       slots: transformedSlots,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  async update(id: number, dto: UpdateEventSlotDto) {
+    const slot = await this.prisma.eventSlot.findUnique({ where: { id } });
+
+    if (!slot) {
+      throw new NotFoundException('슬롯을 찾을 수 없습니다.');
+    }
+
+    if (dto.maxCapacity !== undefined && dto.maxCapacity < slot.currentCount) {
+      throw new BadRequestException(
+        '정원은 현재 예약 수보다 작을 수 없습니다.',
+      );
+    }
+
+    return this.prisma.eventSlot.update({
+      where: { id },
+      data: {
+        ...(dto.maxCapacity !== undefined && { maxCapacity: dto.maxCapacity }),
+        ...(dto.extraInfo !== undefined && {
+          extraInfo: dto.extraInfo as Prisma.InputJsonValue,
+        }),
+      },
+    });
+  }
+
+  async delete(id: number) {
+    const slot = await this.prisma.eventSlot.findUnique({
+      where: { id },
+      include: { reservations: { where: { status: 'CONFIRMED' } } },
+    });
+
+    if (!slot) {
+      throw new NotFoundException('슬롯을 찾을 수 없습니다.');
+    }
+
+    if (slot.reservations.length > 0) {
+      throw new BadRequestException('예약이 있는 슬롯은 삭제할 수 없습니다.');
+    }
+
+    return this.prisma.eventSlot.delete({ where: { id } });
+  }
+
+  async create(dto: CreateEventSlotDto) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: dto.eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+    }
+
+    return this.prisma.eventSlot.create({
+      data: {
+        eventId: dto.eventId,
+        maxCapacity: dto.maxCapacity,
+        currentCount: 0,
+        extraInfo: dto.extraInfo as Prisma.InputJsonValue,
+      },
+    });
   }
 }
