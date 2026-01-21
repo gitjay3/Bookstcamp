@@ -139,7 +139,11 @@ describe('EventsService', () => {
       expect(result).toEqual(mockEvent);
       expect(prismaMock.event.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
-        include: { slots: true },
+        include: {
+          slots: {
+            orderBy: { id: 'asc' },
+          },
+        },
       });
     });
 
