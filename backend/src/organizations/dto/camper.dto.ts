@@ -23,4 +23,7 @@ export class CamperDto {
     example: PreRegStatus.INVITED,
   })
   status: PreRegStatus;
+
+  @ApiProperty({ description: '그룹 번호', example: 1, required: false })
+  groupNumber?: number | null;
 }

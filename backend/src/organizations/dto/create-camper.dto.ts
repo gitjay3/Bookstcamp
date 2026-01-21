@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Track } from '@prisma/client';
 
 export class CreateCamperDto {
@@ -22,4 +22,9 @@ export class CreateCamperDto {
   @IsEnum(Track)
   @IsNotEmpty()
   track: Track;
+
+  @ApiProperty({ description: '그룹 번호', example: 1, required: false })
+  @IsInt()
+  @IsOptional()
+  groupNumber?: number;
 }
