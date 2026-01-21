@@ -129,7 +129,20 @@ pnpm db:seed:local
 - 로컬 확인: http://localhost
 - API 문서(Swagger): http://localhost/api-docs
 
+### 모니터링 (Prometheus + Grafana)
+
+```bash
+# 모니터링 포함 실행
+pnpm docker:local:up:monitoring
+
+# 종료
+pnpm docker:local:down
+```
+
+- Grafana: http://localhost:3000 (admin / admin)
+- Prometheus: http://localhost:9090
+
 <br>
- 
+
 ## 라이선스
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
