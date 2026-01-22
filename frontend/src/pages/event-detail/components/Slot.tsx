@@ -1,60 +1,72 @@
-import type { EventSlot } from '@/types/event';
+import React from 'react';
+import type { EventSlot, SlotSchemaField } from '@/types/event';
 import cn from '@/utils/cn';
-
-const FIELD_ORDER = ['content', 'eventDate', 'startTime', 'endTime', 'location', 'mentorName'];
-
-function getOrderedEntries(extraInfo: Record<string, string>): { key: string; value: string }[] {
-  return FIELD_ORDER
-    .filter((key) => key in extraInfo)
-    .map((key) => ({ key, value: extraInfo[key] }));
-}
 
 interface SlotProps {
   isReservable: boolean;
   slot: EventSlot;
+  fields: SlotSchemaField[];
   selectedSlotId: number | null;
   setSelectedSlotId: React.Dispatch<React.SetStateAction<number | null>>;
+  gridLayout: React.CSSProperties;
 }
 
-function Slot({ isReservable, slot, selectedSlotId, setSelectedSlotId }: SlotProps) {
+function Slot({
+  isReservable,
+  slot,
+  fields,
+  selectedSlotId,
+  setSelectedSlotId,
+  gridLayout,
+}: SlotProps) {
   const isClosed = slot.maxCapacity === slot.currentCount;
   const isSelected = selectedSlotId === slot.id;
-  const orderedEntries = getOrderedEntries(slot.extraInfo);
+  const isDisabled = !isReservable || isClosed;
 
   return (
     <button
       type="button"
+      disabled={isDisabled}
+      style={gridLayout}
       className={cn(
-        'border-neutral-border-default flex h-12 w-full cursor-pointer items-center justify-between rounded-md border px-4 transition',
-        isSelected && 'border-brand-border-default',
-        (isClosed) && 'bg-neutral-surface-default text-neutral-text-secondary',
-        (!isReservable || isClosed) && 'cursor-not-allowed',
+        'grid w-full items-center rounded-xl border px-6 py-3 transition-all duration-100',
+        // 기본 배경 및 테두리
+        'border-neutral-border-default bg-white hover:border-gray-300',
+        // 선택 상태
+        isSelected && 'border-brand-500 bg-brand-50 ring-brand-500/50 shadow-sm ring-1',
+        // 비활성/마감 상태
+        isDisabled && 'bg-neutral-surface-default cursor-not-allowed opacity-60',
       )}
       onClick={() => {
-        if (isReservable && !isClosed) {
-          setSelectedSlotId(slot.id);
-        }
+        if (!isDisabled) setSelectedSlotId(slot.id);
       }}
     >
-      <div className="flex gap-1">
-        {orderedEntries.map((entry, idx) => (
-          <div key={entry.key} className="flex items-center gap-1">
-            <div
-              className={cn(
-                isSelected && 'text-brand-text-primary',
-                isClosed && 'text-neutral-text-secondary',
-              )}
-            >
-              {entry.value}
-            </div>
-            {idx < orderedEntries.length - 1 && (
-              <div className="text-neutral-border-default">|</div>
+      {/* 데이터 필드들 */}
+      {fields.map((field) => {
+        const value = slot.extraInfo?.[field.id] ?? '-';
+        return (
+          <div
+            key={field.id}
+            className={cn(
+              'text-16 text-neutral-text-secondary pr-4 text-left font-medium break-all',
+              isClosed && 'text-neutral-text-tertiary',
             )}
+          >
+            {value}
           </div>
-        ))}
-      </div>
-      <div className={cn('text-12', isClosed && 'text-error-text-primary')}>
-        {isClosed ? '마감' : `${slot.currentCount}/${slot.maxCapacity}`}
+        );
+      })}
+
+      {/* 상태 표시 열 */}
+      <div className="flex justify-center">
+        <div
+          className={cn(
+            'text-12 flex h-7 w-20 items-center justify-center rounded-xl font-extrabold tracking-tight',
+            isClosed ? 'text-error-text-primary' : 'text-brand-text-primary',
+          )}
+        >
+          {isClosed ? '마감' : `${slot.currentCount}/${slot.maxCapacity}`}
+        </div>
       </div>
     </button>
   );
