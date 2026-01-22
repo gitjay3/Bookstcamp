@@ -24,7 +24,7 @@ export default function EventCreatePage() {
   }
 
   const methods = useForm<EventFormValues>({
-    resolver: zodResolver(eventSchema),
+    resolver: isEditMode ? undefined : zodResolver(eventSchema), // TODO : slotSchema 통일 후 : 앞부분 삭제 요망
     defaultValues: {
       track: 'COMMON',
       applicationUnit: 'INDIVIDUAL',
@@ -45,18 +45,11 @@ export default function EventCreatePage() {
         if (isEditMode) {
           // 수정 모드: 기존 이벤트 데이터 로드
           const event = await getEvent(Number(eventId));
+          console.log('Backend slotSchema:', event.slotSchema);
           const startDate = event.startTime.toISOString().split('T')[0];
           const startTimeStr = event.startTime.toTimeString().slice(0, 5);
           const endDate = event.endTime.toISOString().split('T')[0];
           const endTimeStr = event.endTime.toTimeString().slice(0, 5);
-
-          const convertedSlotSchema = {
-            fields: Object.entries(event.slotSchema).map(([id, field]) => ({
-              id,
-              name: field.label,
-              type: field.type as 'text' | 'number' | 'time',
-            })),
-          };
 
           const convertedSlots = event.slots.map((slot) => ({
             ...slot.extraInfo,
@@ -75,7 +68,7 @@ export default function EventCreatePage() {
             closeDate: endDate,
             openTime: startTimeStr,
             closeTime: endTimeStr,
-            slotSchema: convertedSlotSchema,
+            slotSchema: event.slotSchema as unknown as EventFormValues['slotSchema'], // TODO: slotSchema 구조 적용하고 as~ 부분 지워야함
             slots: convertedSlots,
           });
         } else {
@@ -123,48 +116,49 @@ export default function EventCreatePage() {
         applicationUnit: data.applicationUnit,
         startTime,
         endTime,
-        slotSchema: convertToBackendSlotSchema(data.slotSchema.fields),
+        slotSchema: data.slotSchema,
       });
 
-      // 슬롯 처리
-      const allowedFieldIds = new Set(data.slotSchema.fields.map((f) => f.id));
+      // TODO: 추후 SchemaSlot 일괄 수정 후 처리
+      // // 슬롯 처리
+      // const allowedFieldIds = new Set(data.slotSchema.fields.map((f) => f.id));
 
-      // 현재 폼의 슬롯 ID 목록
-      const currentSlotIds = new Set(
-        data.slots
-          .map((slot) => (slot as Record<string, unknown>).slotId as number | undefined)
-          .filter((id): id is number => id !== undefined),
-      );
+      // // 현재 폼의 슬롯 ID 목록
+      // const currentSlotIds = new Set(
+      //   data.slots
+      //     .map((slot) => (slot as Record<string, unknown>).slotId as number | undefined)
+      //     .filter((id): id is number => id !== undefined),
+      // );
 
-      // 1. 삭제된 슬롯 처리 (원본에는 있지만 현재에는 없는 슬롯)
-      const deletePromises = originalSlots
-        .filter((original) => !currentSlotIds.has(original.id))
-        .map((slot) => deleteEventSlot(slot.id));
+      // // 1. 삭제된 슬롯 처리 (원본에는 있지만 현재에는 없는 슬롯)
+      // const deletePromises = originalSlots
+      //   .filter((original) => !currentSlotIds.has(original.id))
+      //   .map((slot) => deleteEventSlot(slot.id));
 
-      // 2. 업데이트 및 생성 처리
-      const upsertPromises = data.slots.map((slot) => {
-        const extraInfo: Record<string, unknown> = {};
-        Object.entries(slot).forEach(([k, v]) => {
-          if (allowedFieldIds.has(k)) extraInfo[k] = v;
-        });
+      // // 2. 업데이트 및 생성 처리
+      // const upsertPromises = data.slots.map((slot) => {
+      //   const extraInfo: Record<string, unknown> = {};
+      //   Object.entries(slot).forEach(([k, v]) => {
+      //     if (allowedFieldIds.has(k)) extraInfo[k] = v;
+      //   });
 
-        const capacityRaw = (slot as Record<string, unknown>).capacity;
-        const maxCapacity = Number(capacityRaw ?? 1);
-        const slotId = (slot as Record<string, unknown>).slotId as number | undefined;
+      //   const capacityRaw = (slot as Record<string, unknown>).capacity;
+      //   const maxCapacity = Number(capacityRaw ?? 1);
+      //   const slotId = (slot as Record<string, unknown>).slotId as number | undefined;
 
-        if (slotId) {
-          // 기존 슬롯 업데이트
-          return updateEventSlot(slotId, { maxCapacity, extraInfo });
-        }
-        // 새 슬롯 생성
-        return createEventSlot({
-          eventId: Number(eventId),
-          maxCapacity,
-          extraInfo,
-        });
-      });
+      //   if (slotId) {
+      //     // 기존 슬롯 업데이트
+      //     return updateEventSlot(slotId, { maxCapacity, extraInfo });
+      //   }
+      //   // 새 슬롯 생성
+      //   return createEventSlot({
+      //     eventId: Number(eventId),
+      //     maxCapacity,
+      //     extraInfo,
+      //   });
+      // });
 
-      await Promise.all([...deletePromises, ...upsertPromises]);
+      // await Promise.all([...deletePromises, ...upsertPromises]);
 
       navigate(`/orgs/${orgId}/events/${eventId}`);
     } else {
@@ -210,7 +204,10 @@ export default function EventCreatePage() {
     // eslint-disable-next-line react/jsx-props-no-spreading
     <FormProvider {...methods}>
       <form
-        onSubmit={methods.handleSubmit(onSubmit)}
+        onSubmit={methods.handleSubmit(onSubmit, (errors) => {
+          console.log('Form validation errors:', errors);
+          console.log('Current form values:', methods.getValues()); // 이 줄 추가
+        })}
         className="mx-auto flex max-w-300 flex-col gap-8"
       >
         <PageHeader
