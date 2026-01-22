@@ -93,7 +93,7 @@ function ReservationButton({
         onClick={handleClick}
         disabled={!isClickable || isSubmitting}
         className={cn(
-          'bg-brand-surface-default h-12 w-160 cursor-pointer rounded-lg font-bold text-white transition',
+          'bg-brand-surface-default h-12 w-200 cursor-pointer rounded-lg font-bold text-white transition',
           hasReservation && 'bg-error-500 hover:bg-error-600',
           disabled && !hasReservation && 'bg-brand-surface-disabled cursor-not-allowed',
           !isReservable &&

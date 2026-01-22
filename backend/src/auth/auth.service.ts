@@ -87,7 +87,8 @@ export class AuthService {
       // (1) User & AuthAccount 생성
       const newUser = await tx.user.create({
         data: {
-          name: data.name,
+          username: data.githubLogin, // GitHub username 저장
+          name: preRegistrations[0]?.name || null, // 사전 등록된 실명 (없으면 null)
           role: Role.USER,
           authAccounts: {
             create: {
@@ -105,6 +106,7 @@ export class AuthService {
           data: preRegistrations.map((preReg) => ({
             userId: newUser.id,
             organizationId: preReg.organizationId,
+            camperId: preReg.camperId, // camperId를 CamperOrganization에 저장
           })),
         });
 
