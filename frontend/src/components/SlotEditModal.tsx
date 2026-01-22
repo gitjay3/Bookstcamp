@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { EventSlot, SlotSchema } from '@/types/event';
 
+const FIELD_ORDER = ['content', 'eventDate', 'startTime', 'endTime', 'location', 'mentorName'];
+
 interface SlotEditModalProps {
   open: boolean;
   mode: 'create' | 'edit';
@@ -98,23 +100,26 @@ export default function SlotEditModal({
 
         <div className="mt-4 flex flex-col gap-4">
           {slotSchema &&
-            Object.entries(slotSchema).map(([fieldId, field]) => (
-              <div key={fieldId}>
-                <label
-                  htmlFor={`slot-field-${fieldId}`}
-                  className="text-neutral-text-primary block text-sm font-medium"
-                >
-                  {field.label}
-                </label>
-                <input
-                  id={`slot-field-${fieldId}`}
-                  type={field.type === 'time' ? 'time' : 'text'}
-                  value={extraInfo[fieldId] || ''}
-                  onChange={(e) => setExtraInfo({ ...extraInfo, [fieldId]: e.target.value })}
-                  className="border-neutral-border-default mt-1 w-full rounded-md border px-3 py-2"
-                />
-              </div>
-            ))}
+            FIELD_ORDER.filter((fieldId) => fieldId in slotSchema).map((fieldId) => {
+              const field = slotSchema[fieldId];
+              return (
+                <div key={fieldId}>
+                  <label
+                    htmlFor={`slot-field-${fieldId}`}
+                    className="text-neutral-text-primary block text-sm font-medium"
+                  >
+                    {field.label}
+                  </label>
+                  <input
+                    id={`slot-field-${fieldId}`}
+                    type={field.type === 'time' ? 'time' : 'text'}
+                    value={extraInfo[fieldId] || ''}
+                    onChange={(e) => setExtraInfo({ ...extraInfo, [fieldId]: e.target.value })}
+                    className="border-neutral-border-default mt-1 w-full rounded-md border px-3 py-2"
+                  />
+                </div>
+              );
+            })}
 
           <div>
             <label
