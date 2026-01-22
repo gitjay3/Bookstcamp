@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import useOutsideClick from '@/hooks/useOutsideClick';
 
-export type SlotFieldType = 'text' | 'number' | 'time';
+export type SlotFieldType = 'text' | 'number' | 'date' | 'time';
 
 export type Template = {
   id: string;

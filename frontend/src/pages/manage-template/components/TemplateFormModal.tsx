@@ -19,7 +19,7 @@ const templateSchema = z.object({
       .array(
         z.object({
           name: z.string().min(1, '필드 이름을 입력해주세요.'),
-          type: z.enum(['text', 'number', 'time']),
+          type: z.enum(['text', 'number', 'date', 'time']),
         }),
       )
       .min(1, '최소 1개의 필드가 필요합니다.'),
@@ -31,6 +31,7 @@ type TemplateFormValues = z.infer<typeof templateSchema>;
 const fieldTypeOptions = [
   { key: 'text' as const, label: '텍스트 (문자열)' },
   { key: 'number' as const, label: '숫자' },
+  { key: 'date' as const, label: '날짜 (YYYY-MM-DD)' },
   { key: 'time' as const, label: '시간 (HH:MM)' },
 ];
 
