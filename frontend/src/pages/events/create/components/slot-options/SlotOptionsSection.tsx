@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useFormContext, useFieldArray, useWatch } from 'react-hook-form';
+import { getTemplates } from '@/api/template';
 import type { EventFormValues } from '../../schema';
 import SectionCard from '../SectionCard';
 import TemplateSelectModal, { type Template, type SlotFieldType } from './TemplateSelectModal';
 import SlotActionsBar from './SlotActionsBar';
 import SlotTable from './SlotTable';
-import { getTemplates } from '@/api/template';
 
 export default function SlotOptionsSection() {
   const { orgId } = useParams<{ orgId: string }>();
