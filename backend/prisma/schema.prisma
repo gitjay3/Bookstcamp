@@ -93,7 +93,8 @@ model Event {
 
   model User {
     id        String   @id @default(uuid()) @db.Uuid()
-    name      String
+    username  String   @unique     // GitHub username
+    name      String?              // 실명
     role      Role     @default(USER)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -142,12 +143,16 @@ model Event {
     id             String   @id @default(uuid()) @db.Uuid()
     userId         String   @db.Uuid()
     organizationId String   @db.Uuid()
+    camperId       String?              // 조직 내 캠퍼 ID (예: J283)
+    groupNumber    Int?                 // 그룹 번호
     createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
 
     user         User         @relation(fields: [userId], references: [id])
     organization Organization @relation(fields: [organizationId], references: [id])
 
     @@unique([userId, organizationId])
+    @@unique([organizationId, camperId])  // 같은 조직 내에서 camperId 중복 방지
   }
 
   enum PreRegStatus {
@@ -165,6 +170,7 @@ model Event {
     username       String       // GitHub Username (중요 식별자)
     name           String       // 실명
     track          Track        // 과정 (분야)
+    groupNumber    Int?         // 그룹 번호
     
     status         PreRegStatus @default(INVITED)
     createdAt      DateTime     @default(now())
@@ -173,5 +179,6 @@ model Event {
     claimedUser  User?        @relation(fields: [claimedUserId], references: [id])
     organization Organization @relation(fields: [organizationId], references: [id])
 
+    @@unique([organizationId, camperId])
     @@index([username])
   }

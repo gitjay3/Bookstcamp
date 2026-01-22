@@ -39,6 +39,7 @@ async function main() {
       passwordHash: hashedPassword,
       user: {
         create: {
+          username: 'admin',
           name: '시스템 관리자',
           role: Role.ADMIN,
         },
@@ -64,6 +65,7 @@ async function main() {
       providerId: '12345678',
       user: {
         create: {
+          username: 'testuser',
           name: '테스트 사용자',
           role: Role.USER,
         },
@@ -135,7 +137,7 @@ async function main() {
       organizationId: organization.id,
       camperId: 'J999',
       name: '테스트 사용자',
-      username: '12345678',
+      username: 'testuser',
       track: Track.ANDROID,
       status: PreRegStatus.CLAIMED,
       claimedUserId: testUser.user.id,
@@ -147,6 +149,7 @@ async function main() {
     data: {
       userId: testUser.user.id,
       organizationId: organization.id,
+      camperId: 'J999',
     },
   });
 
