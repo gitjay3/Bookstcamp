@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useFormContext, useFieldArray, useWatch } from 'react-hook-form';
 import type { EventFormValues } from '../../schema';
@@ -6,6 +6,7 @@ import SectionCard from '../SectionCard';
 import TemplateSelectModal, { type Template, type SlotFieldType } from './TemplateSelectModal';
 import SlotActionsBar from './SlotActionsBar';
 import SlotTable from './SlotTable';
+import { getTemplates } from '@/api/template';
 
 export default function SlotOptionsSection() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -27,22 +28,24 @@ export default function SlotOptionsSection() {
   });
 
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
 
-  const templates: Template[] = useMemo(
-    () => [
-      {
-        id: 'tpl_1',
-        title: '시니어 리뷰어 피드백',
-        description: '리뷰어와 시간을 선택하는 템플릿',
-        tags: ['시작 시간', '리뷰어', '정원'],
-        fields: [
-          { id: 'f_1', name: '시작 시간', type: 'time' },
-          { id: 'f_2', name: '리뷰어', type: 'text' },
-        ],
-      },
-    ],
-    [],
-  );
+  useEffect(() => {
+    getTemplates().then((data) => {
+      const mapped = data.map((t) => ({
+        id: String(t.id),
+        title: t.title,
+        description: t.description || '',
+        tags: t.slotSchema.fields.map((f) => f.name),
+        fields: t.slotSchema.fields.map((f) => ({
+          id: f.id,
+          name: f.name,
+          type: f.type as SlotFieldType,
+        })),
+      }));
+      setTemplates(mapped);
+    });
+  }, []);
 
   const buildDefaultSlotRow = (fieldsToUse: Array<{ id: string; type: SlotFieldType }>) => {
     const base = fieldsToUse.reduce(
