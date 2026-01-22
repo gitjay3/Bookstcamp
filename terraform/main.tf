@@ -121,4 +121,46 @@ resource "ncloud_access_control_group_rule" "default_rules" {
     port_range  = "5432"
     description = "PostgreSQL internal"
   }
+
+  # ===================
+  # Outbound 규칙
+  # ===================
+
+  # VPC 내부 통신
+  outbound {
+    protocol    = "TCP"
+    ip_block    = "10.0.0.0/16"
+    port_range  = "1-65535"
+    description = "VPC internal"
+  }
+
+  # ICMP (ping 응답)
+  outbound {
+    protocol    = "ICMP"
+    ip_block    = "0.0.0.0/0"
+    description = "ICMP"
+  }
+
+  # HTTP/HTTPS (패키지 업데이트 등)
+  outbound {
+    protocol    = "TCP"
+    ip_block    = "0.0.0.0/0"
+    port_range  = "80"
+    description = "HTTP"
+  }
+
+  outbound {
+    protocol    = "TCP"
+    ip_block    = "0.0.0.0/0"
+    port_range  = "443"
+    description = "HTTPS"
+  }
+
+  # DNS
+  outbound {
+    protocol    = "UDP"
+    ip_block    = "0.0.0.0/0"
+    port_range  = "53"
+    description = "DNS"
+  }
 }
