@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import cn from '@/utils/cn';
 import EllipsisIcon from '@/assets/icons/ellipsis-vertical.svg?react';
 
 interface MenuItem {
   label: string;
   onClick: () => void;
+  icon?: ReactNode;
   variant?: 'default' | 'danger';
 }
 
@@ -34,6 +36,7 @@ export default function DropdownMenu({ items }: DropdownMenuProps) {
       <button
         type="button"
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
@@ -48,15 +51,18 @@ export default function DropdownMenu({ items }: DropdownMenuProps) {
             <button
               key={item.label}
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault(); // Link 클릭 방지
+                e.stopPropagation();
                 item.onClick();
                 setIsOpen(false);
               }}
               className={cn(
-                'hover:bg-neutral-surface-default w-full px-4 py-2 text-left text-sm',
+                'hover:bg-neutral-surface-default flex w-full items-center gap-2 px-4 py-2 text-left text-sm',
                 item.variant === 'danger' && 'text-error-text-primary',
               )}
             >
+              {item.icon}
               {item.label}
             </button>
           ))}
