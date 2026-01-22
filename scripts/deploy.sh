@@ -123,10 +123,16 @@ log_info "Step 6: 최신 Docker 이미지 Pull"
 run_with_env docker compose -f "$COMPOSE_FILE" pull
 
 # .deploy.env가 있으면 DATABASE_URL 등 환경변수 로드
+log_info "DEBUG: PROJECT_ROOT=$PROJECT_ROOT"
+log_info "DEBUG: .deploy.env 경로: $PROJECT_ROOT/.deploy.env"
 if [ -f "$PROJECT_ROOT/.deploy.env" ]; then
+    log_info "DEBUG: .deploy.env 파일 존재함"
     set -a
     source "$PROJECT_ROOT/.deploy.env"
     set +a
+    log_info "DEBUG: DOTENV_PRIVATE_KEY_PRODUCTION 설정됨: $([ -n "$DOTENV_PRIVATE_KEY_PRODUCTION" ] && echo "yes (${#DOTENV_PRIVATE_KEY_PRODUCTION} chars)" || echo "no")"
+else
+    log_warn "DEBUG: .deploy.env 파일 없음!"
 fi
 
 # 6. Prisma 마이그레이션 실행
