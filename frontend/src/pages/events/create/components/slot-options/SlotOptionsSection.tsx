@@ -62,10 +62,6 @@ export default function SlotOptionsSection() {
     setIsTemplateModalOpen(false);
   };
 
-  const handleDownloadTemplate = () => {
-    console.log('템플릿 서식 다운로드');
-  };
-
   const manageTemplatesHref = `/orgs/${orgId}/templates`;
 
   return (
@@ -82,7 +78,6 @@ export default function SlotOptionsSection() {
 
           <SlotActionsBar
             onOpenTemplate={() => setIsTemplateModalOpen(true)}
-            onDownloadTemplate={handleDownloadTemplate}
             onAddSlot={handleAddSlot}
           />
         </div>
