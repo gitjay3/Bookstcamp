@@ -107,6 +107,7 @@ export class AuthService {
             userId: newUser.id,
             organizationId: preReg.organizationId,
             camperId: preReg.camperId, // camperId를 CamperOrganization에 저장
+            groupNumber: preReg.groupNumber, // groupNumber 연동
           })),
         });
 
