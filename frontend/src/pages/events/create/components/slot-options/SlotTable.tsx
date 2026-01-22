@@ -1,8 +1,8 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import TrashIcon from '@/assets/icons/trash.svg?react';
 import { useFormContext } from 'react-hook-form';
+import type { SlotFieldType } from '@/types/event';
 import type { EventFormValues } from '../../schema';
-import type { SlotFieldType } from './TemplateSelectModal';
 
 type Props = {
   templateFields: Array<{ id: string; name: string; type: SlotFieldType }>;
@@ -30,7 +30,7 @@ export default function SlotTable({ templateFields, rows, onRemove }: Props) {
       if (v === '' || v === null) return undefined;
       const n = Number(v);
       if (Number.isNaN(n)) return undefined;
-      return Math.max(0, n);
+      return Math.max(1, n);
     },
   };
 
@@ -85,8 +85,8 @@ export default function SlotTable({ templateFields, rows, onRemove }: Props) {
                 <input
                   {...register(`slots.${rowIndex}.capacity` as const, capacityRegisterOptions)}
                   type="number"
-                  min={0}
-                  placeholder="0"
+                  min={1}
+                  placeholder="1"
                   onKeyDown={blockNegativeKey}
                   className={inputBaseClassName}
                 />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'; // useMemo 대신 useEffect, useState 추가
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useFormContext, useFieldArray, useWatch } from 'react-hook-form';
 import { getTemplates } from '@/api/template';
@@ -53,7 +53,7 @@ export default function SlotOptionsSection() {
       (acc, f) => ({ ...acc, [f.id]: f.type === 'number' ? 0 : '' }),
       {} as Record<string, unknown>,
     );
-    return { ...base, capacity: 0 };
+    return { ...base, capacity: 1 };
   };
 
   const handleAddSlot = () => {
