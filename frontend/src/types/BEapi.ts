@@ -34,7 +34,7 @@ export interface EventSlotApiResponse {
   reservations?: {
     name: string;
     username: string;
-    avatarUrl: string;
+    avatarUrl: string | null;
   }[];
 }
 
@@ -80,7 +80,7 @@ export interface SlotAvailabilityItem {
   reservations?: {
     name: string;
     username: string;
-    avatarUrl: string;
+    avatarUrl: string | null;
   }[];
 }
 

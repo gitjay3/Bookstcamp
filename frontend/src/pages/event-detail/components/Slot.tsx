@@ -105,12 +105,13 @@ function Slot({
             )}>
               {slot.reservations && slot.reservations.length > 0 ? (
                 <div className="flex items-center -space-x-2">
-                  {slot.reservations.slice(0, 3).map((reservation) => (
+                  {slot.reservations.slice(0, 3).map((reservation, index) => (
                     <img
-                      key={`${reservation.name}-${reservation.avatarUrl}`}
+                      key={`${reservation.username}-${index}`}
                       className="h-6 w-6 rounded-full border-2 border-white object-cover flex-shrink-0 bg-neutral-surface-default"
-                      src={reservation.avatarUrl}
+                      src={reservation.avatarUrl ?? undefined}
                       alt={reservation.name}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   ))}
                   {slot.reservations.length > 3 && (

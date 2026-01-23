@@ -3,7 +3,7 @@ import Modal from '@/components/Modal';
 interface Reserver {
   name: string;
   username: string;
-  avatarUrl: string;
+  avatarUrl: string | null;
 }
 
 interface ReserverListModalProps {
@@ -29,9 +29,10 @@ function ReserverListModal({ isOpen, onClose, reservers }: ReserverListModalProp
                   className="flex items-center gap-x-4 rounded-xl p-3 hover:bg-neutral-surface-default transition-colors"
                 >
                   <img
-                    src={reserver.avatarUrl}
+                    src={reserver.avatarUrl ?? undefined}
                     alt={reserver.name}
                     className="h-10 w-10 rounded-full object-cover border border-neutral-border-default flex-shrink-0"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
                   <div className="flex flex-col">
                     <span className="text-16 font-semibold text-neutral-text-primary">

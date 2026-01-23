@@ -24,7 +24,7 @@ export interface EventSlot {
   reservations?: {
     name: string;
     username: string;
-    avatarUrl: string;
+    avatarUrl: string | null;
   }[];
 }
 

@@ -35,7 +35,7 @@ function EventDetail() {
 
   const isLoggedIn = user !== null;
   const isAdmin = user?.role === 'ADMIN';
-  const eventId = Number(id) || 0;
+  const eventId = id ? Number(id) : NaN;
   const eventStatus = event?.status;
 
   const {
@@ -52,7 +52,7 @@ function EventDetail() {
 
   // 이벤트 정보 불러오기
   const fetchEvent = useCallback(async () => {
-    if (!eventId) return;
+    if (!eventId || Number.isNaN(eventId)) return;
 
     try {
       const eventData = await getEvent(eventId);
@@ -66,7 +66,7 @@ function EventDetail() {
 
   // 내 예약 조회
   const fetchMyReservation = useCallback(async () => {
-    if (!eventId) return;
+    if (!eventId || Number.isNaN(eventId)) return;
 
     try {
       const reservation = await getMyReservationForEvent(eventId);
@@ -78,7 +78,7 @@ function EventDetail() {
 
   // 실시간 정원 폴링
   const updateSlotAvailability = useCallback(async () => {
-    if (!eventId) return;
+    if (!eventId || Number.isNaN(eventId)) return;
 
     try {
       const availabilityData = await getSlotAvailability(eventId);
