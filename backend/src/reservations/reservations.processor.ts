@@ -65,7 +65,11 @@ export class ReservationsProcessor extends WorkerHost {
 
       // 보상 트랜잭션: Redis 선차감된 경우에만 재고 복구
       if (stockDeducted) {
-        await this.redisService.incrementStock(slotId, maxCapacity);
+        await this.redisService.incrementStock(
+          slotId,
+          maxCapacity,
+          'failure_recovery',
+        );
         this.logger.warn(`재고 복구 완료: slotId=${slotId}`);
       }
 

@@ -1,13 +1,11 @@
-export type FieldType = 'text' | 'number' | 'date' | 'time';
+import type { SlotFieldType, SlotSchemaField } from './event';
 
-export interface Field {
-  id: string;
-  name: string;
-  type: FieldType;
-}
+// template.ts에서는 event.ts의 타입을 재사용
+export type FieldType = SlotFieldType;
+export type Field = SlotSchemaField;
 
 export interface SlotSchema {
-  fields: Field[];
+  fields: SlotSchemaField[];
 }
 
 export interface Template {

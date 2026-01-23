@@ -1,4 +1,4 @@
-export type Track = 'COMMON' | 'WEB' | 'IOS' | 'ANDROID';
+export type Track = 'ALL' | 'COMMON' | 'WEB' | 'IOS' | 'ANDROID';
 export type Status = 'ONGOING' | 'UPCOMING' | 'ENDED';
 export type ApplicationUnit = 'INDIVIDUAL' | 'TEAM';
 export type SlotFieldType = 'text' | 'number' | 'date' | 'time';

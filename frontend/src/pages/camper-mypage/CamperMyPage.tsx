@@ -4,7 +4,7 @@ import EventCategoryLabel from '@/components/EventCategoryLabel';
 import ApplicationUnitLabel from '@/components/ApplicationUnitLabel';
 import Modal from '@/components/Modal';
 import cn from '@/utils/cn';
-import type { Track, ApplicationUnit } from '@/types/event';
+import type { Track, ApplicationUnit, SlotSchemaField } from '@/types/event';
 import { getMyReservations, cancelReservation } from '@/api/reservation';
 import type { ReservationApiResponse } from '@/types/BEapi';
 
@@ -19,12 +19,6 @@ interface SlotExtraInfo {
   location?: string;
   mentor?: string;
   [key: string]: unknown;
-}
-
-interface SlotSchemaField {
-  id: string;
-  name: string;
-  type: string;
 }
 
 interface MyReservation {
@@ -76,7 +70,7 @@ function mapApiResponseToMyReservation(res: ReservationApiResponse): MyReservati
     eventTrack: (res.eventTrack ?? 'COMMON') as Track,
     applicationUnit: (res.applicationUnit ?? 'INDIVIDUAL') as ApplicationUnit,
     extraInfo: res.extraInfo,
-    slotSchema: res.slotSchema,
+    slotSchema: res.slotSchema as { fields: SlotSchemaField[] } | undefined,
   };
 }
 
