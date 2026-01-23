@@ -1,4 +1,4 @@
-import type { EventSlot, SlotSchema, Status } from '@/types/event';
+import type { EventSlot, SlotSchema, SlotSchemaField, Status } from '@/types/event';
 import type { ReservationApiResponse } from '@/types/BEapi';
 import Slot from './Slot';
 
@@ -16,6 +16,28 @@ interface SlotListProps {
   onAddSlot?: () => void;
 }
 
+// 필드 표시 순서 정의 (id 기반)
+const FIELD_ORDER = [
+  'content',      // 내용
+  'date',         // 날짜
+  'startTime',    // 시작 시간
+  'endTime',      // 종료 시간
+  'location',     // 장소
+  'place',        // 장소 (대체 id)
+  'mentorName',   // 멘토명
+];
+
+function sortFields(fields: SlotSchemaField[]): SlotSchemaField[] {
+  return [...fields].sort((a, b) => {
+    const indexA = FIELD_ORDER.indexOf(a.id);
+    const indexB = FIELD_ORDER.indexOf(b.id);
+    // FIELD_ORDER에 없는 필드는 뒤로 배치
+    const orderA = indexA === -1 ? FIELD_ORDER.length : indexA;
+    const orderB = indexB === -1 ? FIELD_ORDER.length : indexB;
+    return orderA - orderB;
+  });
+}
+
 function SlotList({
   status,
   slotSchema,
@@ -29,7 +51,7 @@ function SlotList({
   onDeleteSlot,
   onAddSlot,
 }: SlotListProps) {
-  const fields = slotSchema.fields ?? [];
+  const fields = sortFields(slotSchema.fields ?? []);
 
   // 마스터 그리드 설정: 내용에 맞추되 전체 너비를 고려하여 밸런스 조정
   const gridLayout = {
