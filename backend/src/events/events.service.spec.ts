@@ -129,19 +129,37 @@ describe('EventsService', () => {
       const mockEvent = {
         id: 1,
         title: 'Test Event',
-        slots: [{ id: 1, maxCapacity: 10 }],
+        slots: [{ id: 1, maxCapacity: 10, reservations: [] }],
       };
 
       prismaMock.event.findUnique.mockResolvedValue(mockEvent);
 
       const result = await service.findOne(1);
 
-      expect(result).toEqual(mockEvent);
+      expect(result).toEqual({
+        id: 1,
+        title: 'Test Event',
+        slots: [{ id: 1, maxCapacity: 10, reservations: [] }],
+      });
       expect(prismaMock.event.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
         include: {
           slots: {
             orderBy: { id: 'asc' },
+            include: {
+              reservations: {
+                where: { status: 'CONFIRMED' },
+                select: {
+                  user: {
+                    select: {
+                      name: true,
+                      username: true,
+                      avatarUrl: true,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       });

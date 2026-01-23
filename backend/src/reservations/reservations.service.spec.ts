@@ -75,13 +75,24 @@ describe('ReservationsService', () => {
     const dto: ApplyReservationDto = { eventId: 1, slotId: 1 };
 
     it('예약을 큐에 성공적으로 등록한다', async () => {
+      const now = new Date();
       const mockSlot = {
         id: 1,
         currentCount: 5,
         maxCapacity: 10,
+        event: {
+          id: 1,
+          organizationId: 'org-123',
+          track: 'COMMON', // 트랙 검증 스킵
+          startTime: new Date(now.getTime() - 60000), // 1분 전 시작
+          endTime: new Date(now.getTime() + 60000), // 1분 후 종료
+        },
       };
+      const mockMembership = { userId, organizationId: 'org-123' };
 
       prismaMock.eventSlot.findUnique.mockResolvedValue(mockSlot);
+      prismaMock.reservation.findFirst.mockResolvedValue(null); // 중복 예약 없음
+      prismaMock.camperOrganization.findUnique.mockResolvedValue(mockMembership);
       redisMock.decrementStock.mockResolvedValue(true);
 
       const result = await service.apply(userId, dto);
@@ -103,13 +114,24 @@ describe('ReservationsService', () => {
     });
 
     it('Redis 재고가 없으면 SlotFullException을 던진다', async () => {
+      const now = new Date();
       const mockSlot = {
         id: 1,
         currentCount: 10,
         maxCapacity: 10,
+        event: {
+          id: 1,
+          organizationId: 'org-123',
+          track: 'COMMON', // 트랙 검증 스킵
+          startTime: new Date(now.getTime() - 60000),
+          endTime: new Date(now.getTime() + 60000),
+        },
       };
+      const mockMembership = { userId, organizationId: 'org-123' };
 
       prismaMock.eventSlot.findUnique.mockResolvedValue(mockSlot);
+      prismaMock.reservation.findFirst.mockResolvedValue(null);
+      prismaMock.camperOrganization.findUnique.mockResolvedValue(mockMembership);
       redisMock.decrementStock.mockResolvedValue(false);
 
       await expect(service.apply(userId, dto)).rejects.toThrow(
