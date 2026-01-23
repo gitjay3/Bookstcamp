@@ -14,11 +14,19 @@ import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
 import { TemplatesModule } from './templates/templates.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: true,
+      },
+      path: '/metrics',
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -32,6 +40,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
       inject: [ConfigService],
     }),
     PrismaModule,
+    MetricsModule,
     RedisModule,
     EventsModule,
     ReservationsModule,
