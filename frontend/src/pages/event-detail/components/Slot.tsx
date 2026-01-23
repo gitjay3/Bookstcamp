@@ -3,6 +3,7 @@ import type { EventSlot, SlotSchemaField } from '@/types/event';
 import type { ReservationApiResponse } from '@/types/BEapi';
 import cn from '@/utils/cn';
 import UserSearchIcon from '@/assets/icons/user-search.svg?react';
+import DropdownMenu from '@/components/DropdownMenu';
 import ReserverListModal from './ReserverListModal';
 
 interface SlotProps {
@@ -12,7 +13,9 @@ interface SlotProps {
   selectedSlotId: number | null;
   setSelectedSlotId: React.Dispatch<React.SetStateAction<number | null>>;
   myReservation: ReservationApiResponse | null;
-  gridLayout: React.CSSProperties;
+  isAdmin?: boolean;
+  onEdit?: (slot: EventSlot) => void;
+  onDelete?: (slot: EventSlot) => void;
 }
 
 function Slot({
@@ -22,12 +25,15 @@ function Slot({
   selectedSlotId,
   setSelectedSlotId,
   myReservation,
+  isAdmin = false,
+  onEdit,
+  onDelete,
 }: Omit<SlotProps, 'gridLayout'>) {
   const [isReserversModalOpen, setIsReserversModalOpen] = useState(false);
   const isClosed = slot.maxCapacity === slot.currentCount;
   const isReserved = myReservation?.slotId === slot.id;
   const isSelected = selectedSlotId === slot.id;
-  const isDisabled = isReserved || !isReservable || isClosed;
+  const isDisabled = isAdmin ? false : isReserved || !isReservable || isClosed;
 
   const handleReserversClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -133,7 +139,7 @@ function Slot({
         </button>
 
         {/* 액션 열 (카드 박스 '밖') */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-1">
           {slot.reservations && slot.reservations.length > 0 && (
             <button
               type="button"
@@ -144,6 +150,14 @@ function Slot({
             >
               <UserSearchIcon className="h-5 w-5" />
             </button>
+          )}
+          {isAdmin && (
+            <DropdownMenu
+              items={[
+                { label: '슬롯 수정', onClick: () => onEdit?.(slot) },
+                { label: '슬롯 삭제', onClick: () => onDelete?.(slot), variant: 'danger' },
+              ]}
+            />
           )}
         </div>
       </div>

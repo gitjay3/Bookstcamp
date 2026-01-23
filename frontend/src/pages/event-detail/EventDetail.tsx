@@ -1,13 +1,20 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router';
-import type { EventDetail as EventDetailType } from '@/types/event';
+import type { EventDetail as EventDetailType, EventSlot } from '@/types/event';
 import { getEvent } from '@/api/event';
-import { getSlotAvailability } from '@/api/eventSlot';
+import {
+  getSlotAvailability,
+  updateEventSlot,
+  deleteEventSlot,
+  createEventSlot,
+} from '@/api/eventSlot';
 import { getMyReservationForEvent } from '@/api/reservation';
 import type { ReservationApiResponse } from '@/types/BEapi';
 import useQueue from '@/hooks/useQueue';
 import QueueStatus from '@/components/QueueStatus';
 import { useAuth } from '@/store/AuthContext';
+import ConfirmModal from '@/components/DropdownConfirmModal';
+import SlotEditModal from '@/components/SlotEditModal';
 import EventDetailHeader from './components/EventDetailHeader';
 import ReservationButton from './components/ReservationButton';
 import SlotList from './components/SlotList';
@@ -22,8 +29,12 @@ function EventDetail() {
   const [event, setEvent] = useState<EventDetailType | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingSlot, setEditingSlot] = useState<EventSlot | null>(null);
+  const [deletingSlot, setDeletingSlot] = useState<EventSlot | null>(null);
+  const [isCreatingSlot, setIsCreatingSlot] = useState(false);
 
   const isLoggedIn = user !== null;
+  const isAdmin = user?.role === 'ADMIN';
   const eventId = Number(id) || 0;
   const eventStatus = event?.status;
 
@@ -146,6 +157,39 @@ function EventDetail() {
     fetchEvent();
   }, [fetchEvent]);
 
+  const handleSaveSlot = useCallback(
+    async (data: { slotId?: number; maxCapacity: number; extraInfo: Record<string, unknown> }) => {
+      if (!data.slotId) return;
+      await updateEventSlot(data.slotId, {
+        maxCapacity: data.maxCapacity,
+        extraInfo: data.extraInfo,
+      });
+      setEditingSlot(null);
+      fetchEvent();
+    },
+    [fetchEvent],
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deletingSlot) return;
+    await deleteEventSlot(deletingSlot.id);
+    setDeletingSlot(null);
+    fetchEvent();
+  }, [deletingSlot, fetchEvent]);
+
+  const handleCreateSlot = useCallback(
+    async (data: { eventId?: number; maxCapacity: number; extraInfo: Record<string, unknown> }) => {
+      await createEventSlot({
+        eventId: Number(id),
+        maxCapacity: data.maxCapacity,
+        extraInfo: data.extraInfo,
+      });
+      setIsCreatingSlot(false);
+      fetchEvent();
+    },
+    [id, fetchEvent],
+  );
+
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -175,8 +219,9 @@ function EventDetail() {
           />
           <hr className="border-neutral-border-default" />
 
-          {/* 대기열 상태 */}
-          {event.status === 'ONGOING' &&
+          {/* 대기열 상태 (ONGOING일 때만 표시, 관리자 제외) */}
+          {!isAdmin &&
+            event.status === 'ONGOING' &&
             (isLoggedIn ? (
               <QueueStatus
                 position={position}
@@ -202,18 +247,50 @@ function EventDetail() {
             setSelectedSlotId={setSelectedSlotId}
             myReservation={myReservation}
             disabled={event.status === 'ONGOING' && !hasToken}
+            isAdmin={isAdmin}
+            onEditSlot={setEditingSlot}
+            onDeleteSlot={setDeletingSlot}
+            onAddSlot={() => setIsCreatingSlot(true)}
+          />
+          <SlotEditModal
+            open={!!editingSlot}
+            mode="edit"
+            slot={editingSlot}
+            slotSchema={event?.slotSchema}
+            onClose={() => setEditingSlot(null)}
+            onSave={handleSaveSlot}
+          />
+          <SlotEditModal
+            open={isCreatingSlot}
+            mode="create"
+            eventId={Number(id)}
+            slot={null}
+            slotSchema={event?.slotSchema}
+            onClose={() => setIsCreatingSlot(false)}
+            onSave={handleCreateSlot}
+          />
+          <ConfirmModal
+            open={!!deletingSlot}
+            title="일정 삭제"
+            message="이 일정을 제거하시겠습니까?"
+            confirmText="제거"
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setDeletingSlot(null)}
+            variant="danger"
           />
         </div>
       </div>
 
-      <ReservationButton
-        eventId={eventId}
-        isReservable={event.status === 'ONGOING' && hasToken}
-        selectedSlotId={selectedSlotId}
-        myReservation={myReservation}
-        onReservationSuccess={handleReservationSuccess}
-        onCancelSuccess={handleCancelSuccess}
-      />
+      {!isAdmin && (
+        <ReservationButton
+          eventId={eventId}
+          isReservable={event.status === 'ONGOING' && hasToken}
+          selectedSlotId={selectedSlotId}
+          myReservation={myReservation}
+          onReservationSuccess={handleReservationSuccess}
+          onCancelSuccess={handleCancelSuccess}
+        />
+      )}
     </div>
   );
 }

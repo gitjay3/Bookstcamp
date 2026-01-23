@@ -10,6 +10,10 @@ interface SlotListProps {
   setSelectedSlotId: React.Dispatch<React.SetStateAction<number | null>>;
   myReservation: ReservationApiResponse | null;
   disabled?: boolean;
+  isAdmin?: boolean;
+  onEditSlot?: (slot: EventSlot) => void;
+  onDeleteSlot?: (slot: EventSlot) => void;
+  onAddSlot?: () => void;
 }
 
 function SlotList({
@@ -20,6 +24,10 @@ function SlotList({
   setSelectedSlotId,
   myReservation,
   disabled = false,
+  isAdmin = false,
+  onEditSlot,
+  onDeleteSlot,
+  onAddSlot,
 }: SlotListProps) {
   const fields = slotSchema.fields ?? [];
 
@@ -29,41 +37,61 @@ function SlotList({
   };
 
   return (
-    <div 
-      className="grid w-full gap-y-3" 
-      style={gridLayout}
-    >
-      {/* 헤더 */}
-      <div
-        className="grid col-span-full items-center gap-x-4 px-6 py-4"
-        style={{ gridTemplateColumns: 'subgrid' }}
-      >
-        {fields.map((field) => (
-          <span key={field.id} className="text-14 font-semibold text-neutral-text-secondary text-left">
-            {field.name}
-          </span>
-        ))}
-        <span className="text-14 font-semibold text-neutral-text-secondary text-left">
-          예약자
-        </span>
-        <span className="text-14 font-semibold text-neutral-text-secondary text-left">
-          상태
-        </span>
-        <span /> {/* 액션 컬럼용 빈 헤더 */}
+    <div className="flex flex-col gap-3">
+      {/* 제목 + 일정 추가 버튼 (관리자용) */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-20 font-bold">예약 옵션</h3>
+        {isAdmin && onAddSlot && (
+          <button
+            type="button"
+            onClick={onAddSlot}
+            className="bg-brand-surface-default hover:bg-brand-surface-strong rounded-md px-3 py-1.5 text-sm font-medium text-white"
+          >
+            + 일정 추가
+          </button>
+        )}
       </div>
 
-      {/* 슬롯 리스트: 이제 Slot들이 직접 그리드 자식이 되어 subgrid가 동작함 */}
-      {slots.map((slot) => (
-        <Slot
-          key={slot.id}
-          isReservable={status === 'ONGOING' && !disabled}
-          slot={slot}
-          fields={fields}
-          selectedSlotId={selectedSlotId}
-          setSelectedSlotId={setSelectedSlotId}
-          myReservation={myReservation}
-        />
-      ))}
+      {/* 그리드 레이아웃 */}
+      <div
+        className="grid w-full gap-y-3"
+        style={gridLayout}
+      >
+        {/* 헤더 */}
+        <div
+          className="grid col-span-full items-center gap-x-4 px-6 py-4"
+          style={{ gridTemplateColumns: 'subgrid' }}
+        >
+          {fields.map((field) => (
+            <span key={field.id} className="text-14 font-semibold text-neutral-text-secondary text-left">
+              {field.name}
+            </span>
+          ))}
+          <span className="text-14 font-semibold text-neutral-text-secondary text-left">
+            예약자
+          </span>
+          <span className="text-14 font-semibold text-neutral-text-secondary text-left">
+            상태
+          </span>
+          <span /> {/* 액션 컬럼용 빈 헤더 */}
+        </div>
+
+        {/* 슬롯 리스트: 이제 Slot들이 직접 그리드 자식이 되어 subgrid가 동작함 */}
+        {slots.map((slot) => (
+          <Slot
+            key={slot.id}
+            isReservable={status === 'ONGOING' && !disabled}
+            slot={slot}
+            fields={fields}
+            selectedSlotId={selectedSlotId}
+            setSelectedSlotId={setSelectedSlotId}
+            myReservation={myReservation}
+            isAdmin={isAdmin}
+            onEdit={onEditSlot}
+            onDelete={onDeleteSlot}
+          />
+        ))}
+      </div>
     </div>
   );
 }

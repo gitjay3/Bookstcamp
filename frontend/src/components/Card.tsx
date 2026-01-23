@@ -16,7 +16,8 @@ function Card({ children, className, onClick }: CardProps) {
   };
 
   const baseClassName = cn(
-    'border-neutral-border-default hover:border-brand-border-default flex h-62.5 w-full flex-col justify-between rounded-xl border p-5 text-left transition hover:shadow-md',
+    'border-neutral-border-default hover:border-brand-border-default relative flex h-62.5 w-full flex-col justify-between rounded-xl border p-5 text-left transition hover:shadow-md',
+    onClick && 'cursor-pointer',
     className,
   );
 
