@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import * as eventApi from '@/api/event';
 import {
   customRender,
   renderAuthenticated,
   renderAsAdmin,
   userEvent,
 } from '@/test/utils';
-import Main from './Main';
-import * as eventApi from '@/api/event';
 import type { Event } from '@/types/event';
+import Main from './Main';
 
 // SVG 모킹
 vi.mock('@/assets/icons/plus.svg?react', () => ({

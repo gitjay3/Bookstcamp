@@ -56,7 +56,10 @@ describe('QueueService', () => {
         QueueService,
         { provide: RedisService, useValue: redisMock },
         { provide: MetricsService, useValue: metricsMock },
-        { provide: getQueueToken(QUEUE_CLEANUP_QUEUE), useValue: createCleanupQueueMock() },
+        {
+          provide: getQueueToken(QUEUE_CLEANUP_QUEUE),
+          useValue: createCleanupQueueMock(),
+        },
       ],
     }).compile();
 

@@ -182,9 +182,9 @@ describe('OrganizationsService', () => {
         username: 'other',
       });
 
-      await expect(
-        service.createCamper('org-123', createDto),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.createCamper('org-123', createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('이미 존재하는 username이면 ConflictException을 던진다', async () => {
@@ -193,9 +193,9 @@ describe('OrganizationsService', () => {
         username: 'hong',
       });
 
-      await expect(
-        service.createCamper('org-123', createDto),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.createCamper('org-123', createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('이미 가입된 사용자면 조직 연결도 처리한다', async () => {
@@ -214,7 +214,9 @@ describe('OrganizationsService', () => {
       const txMock = {
         user: { update: jest.fn() },
         camperOrganization: { upsert: jest.fn() },
-        camperPreRegistration: { update: jest.fn().mockResolvedValue(claimedCamper) },
+        camperPreRegistration: {
+          update: jest.fn().mockResolvedValue(claimedCamper),
+        },
       };
       prismaMock.$transaction.mockImplementation(async (cb) => cb(txMock));
 

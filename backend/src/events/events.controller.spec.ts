@@ -58,13 +58,19 @@ describe('EventsController', () => {
       const result = await controller.create(createDto, 'user-123');
 
       expect(result).toEqual(mockEvent);
-      expect(eventsServiceMock.create).toHaveBeenCalledWith(createDto, 'user-123');
+      expect(eventsServiceMock.create).toHaveBeenCalledWith(
+        createDto,
+        'user-123',
+      );
     });
   });
 
   describe('findAll', () => {
     it('모든 이벤트를 조회한다', async () => {
-      const mockEvents = [{ id: 1, title: 'Event 1' }, { id: 2, title: 'Event 2' }];
+      const mockEvents = [
+        { id: 1, title: 'Event 1' },
+        { id: 2, title: 'Event 2' },
+      ];
       eventsServiceMock.findAll.mockResolvedValue(mockEvents);
 
       const result = await controller.findAll();
@@ -76,7 +82,7 @@ describe('EventsController', () => {
       const mockEvents = [{ id: 1, title: 'Web Event', track: Track.WEB }];
       eventsServiceMock.findAll.mockResolvedValue(mockEvents);
 
-      const result = await controller.findAll('WEB');
+      await controller.findAll('WEB');
 
       expect(eventsServiceMock.findAll).toHaveBeenCalledWith('WEB', undefined);
     });
@@ -85,9 +91,12 @@ describe('EventsController', () => {
       const mockEvents = [{ id: 1, title: 'Org Event' }];
       eventsServiceMock.findAll.mockResolvedValue(mockEvents);
 
-      const result = await controller.findAll(undefined, 'org-123');
+      await controller.findAll(undefined, 'org-123');
 
-      expect(eventsServiceMock.findAll).toHaveBeenCalledWith(undefined, 'org-123');
+      expect(eventsServiceMock.findAll).toHaveBeenCalledWith(
+        undefined,
+        'org-123',
+      );
     });
   });
 
@@ -111,12 +120,16 @@ describe('EventsController', () => {
           { id: 2, maxCapacity: 20, currentCount: 5 },
         ],
       };
-      eventSlotsServiceMock.findByEventWithAvailability.mockResolvedValue(mockSlots);
+      eventSlotsServiceMock.findByEventWithAvailability.mockResolvedValue(
+        mockSlots,
+      );
 
       const result = await controller.getSlotsWithAvailability(1);
 
       expect(result).toEqual(mockSlots);
-      expect(eventSlotsServiceMock.findByEventWithAvailability).toHaveBeenCalledWith(1);
+      expect(
+        eventSlotsServiceMock.findByEventWithAvailability,
+      ).toHaveBeenCalledWith(1);
     });
   });
 

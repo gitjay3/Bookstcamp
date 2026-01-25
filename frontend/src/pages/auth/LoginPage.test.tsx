@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import * as authApi from '@/api/auth';
 import { customRender, userEvent } from '@/test/utils';
 import LoginPage from './LoginPage';
-import * as authApi from '@/api/auth';
 
 // SVG 모킹
 vi.mock('@/assets/icons/github.svg?react', () => ({

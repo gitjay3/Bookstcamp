@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import useQueue from './useQueue';
 import * as queueApi from '@/api/queue';
+import useQueue from './useQueue';
 
 vi.mock('@/api/queue');
 

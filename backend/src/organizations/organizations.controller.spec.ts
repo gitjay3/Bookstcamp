@@ -23,9 +23,7 @@ describe('OrganizationsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrganizationsController],
-      providers: [
-        { provide: OrganizationsService, useValue: serviceMock },
-      ],
+      providers: [{ provide: OrganizationsService, useValue: serviceMock }],
     }).compile();
 
     controller = module.get<OrganizationsController>(OrganizationsController);
@@ -40,7 +38,10 @@ describe('OrganizationsController', () => {
       const mockOrgs = [{ id: 'org-123', name: 'Test Org' }];
       serviceMock.findMyOrganizations.mockResolvedValue(mockOrgs);
 
-      const result = await controller.findMyOrganizations('user-123', Role.USER);
+      const result = await controller.findMyOrganizations(
+        'user-123',
+        Role.USER,
+      );
 
       expect(result).toEqual(mockOrgs);
       expect(serviceMock.findMyOrganizations).toHaveBeenCalledWith(
@@ -101,7 +102,10 @@ describe('OrganizationsController', () => {
       const result = await controller.createCamper('org-123', createDto);
 
       expect(result).toEqual(mockCamper);
-      expect(serviceMock.createCamper).toHaveBeenCalledWith('org-123', createDto);
+      expect(serviceMock.createCamper).toHaveBeenCalledWith(
+        'org-123',
+        createDto,
+      );
     });
   });
 
@@ -119,7 +123,11 @@ describe('OrganizationsController', () => {
       };
       serviceMock.updateCamper.mockResolvedValue(mockCamper);
 
-      const result = await controller.updateCamper('org-123', 'camper-1', updateDto);
+      const result = await controller.updateCamper(
+        'org-123',
+        'camper-1',
+        updateDto,
+      );
 
       expect(result).toEqual(mockCamper);
       expect(serviceMock.updateCamper).toHaveBeenCalledWith(
@@ -141,7 +149,10 @@ describe('OrganizationsController', () => {
       const result = await controller.deleteCamper('org-123', 'camper-1');
 
       expect(result).toEqual(mockResult);
-      expect(serviceMock.removeCamper).toHaveBeenCalledWith('org-123', 'camper-1');
+      expect(serviceMock.removeCamper).toHaveBeenCalledWith(
+        'org-123',
+        'camper-1',
+      );
     });
   });
 

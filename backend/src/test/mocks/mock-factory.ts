@@ -7,7 +7,6 @@
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
 import { MetricsService } from '../../metrics/metrics.service';
 
@@ -77,7 +76,9 @@ export interface MockUserData {
   avatarUrl?: string | null;
 }
 
-export function createMockUser(overrides?: Partial<MockUserData>): MockUserData {
+export function createMockUser(
+  overrides?: Partial<MockUserData>,
+): MockUserData {
   return {
     id: 'user-uuid-1',
     name: '테스트 유저',
@@ -87,7 +88,9 @@ export function createMockUser(overrides?: Partial<MockUserData>): MockUserData 
   };
 }
 
-export function createMockAdmin(overrides?: Partial<MockUserData>): MockUserData {
+export function createMockAdmin(
+  overrides?: Partial<MockUserData>,
+): MockUserData {
   return {
     ...createMockUser(),
     name: '관리자',
@@ -107,7 +110,9 @@ export interface MockEventData {
   updatedAt: Date;
 }
 
-export function createMockEvent(overrides?: Partial<MockEventData>): MockEventData {
+export function createMockEvent(
+  overrides?: Partial<MockEventData>,
+): MockEventData {
   const now = new Date();
   return {
     id: 1,
@@ -224,4 +229,5 @@ export function createMockTemplate(
 // Re-exports
 // ============================================
 
-export { createMock, DeepMocked } from '@golevelup/ts-jest';
+export { createMock } from '@golevelup/ts-jest';
+export type { DeepMocked } from '@golevelup/ts-jest';
