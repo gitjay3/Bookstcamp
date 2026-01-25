@@ -120,6 +120,9 @@ importers:
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.39.2
+      '@golevelup/ts-jest':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@nestjs/cli':
         specifier: ^11.0.0
         version: 11.0.14(@types/node@22.19.3)
@@ -879,6 +882,9 @@ packages:
 
   '@fast-csv/parse@4.3.6':
     resolution: {integrity: sha512-uRsLYksqpbDmWaSmzvJcuApSEe38+6NQZBUsuAyMZKqHxH0g1wcJgsKUvN3WC8tewaqFjBMMGrkHmC+T7k8LvA==}
+
+  '@golevelup/ts-jest@1.2.0':
+    resolution: {integrity: sha512-plN26rWBmwOrtWBc46FKgTMWDlLK5F/vYP2i+0NXnoOLdcXrTNDftzW4dpa0fREqUdCRb3EJtuyr6g5AKNKTRA==}
 
   '@hono/node-server@1.19.6':
     resolution: {integrity: sha512-Shz/KjlIeAhfiuE93NDKVdZ7HdBVLQAfdbaXEaoAVO3ic9ibRSLGIQGkcBbFyuLr+7/1D5ZCINM8B+6IvXeMtw==}
@@ -6505,6 +6511,8 @@ snapshots:
       lodash.isnil: 4.0.0
       lodash.isundefined: 3.0.1
       lodash.uniq: 4.5.0
+
+  '@golevelup/ts-jest@1.2.0': {}
 
   '@hono/node-server@1.19.6(hono@4.10.6)':
     dependencies:
