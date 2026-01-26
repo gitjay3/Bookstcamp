@@ -140,6 +140,7 @@ describe('EventsService', () => {
         id: 1,
         title: 'Test Event',
         slots: [{ id: 1, maxCapacity: 10, reservations: [] }],
+        canReserveByTrack: true,
       });
       expect(prismaMock.event.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },

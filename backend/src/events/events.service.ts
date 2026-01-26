@@ -164,7 +164,7 @@ export class EventsService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userId?: string) {
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: {
@@ -203,7 +203,20 @@ export class EventsService {
       }),
     );
 
-    return { ...eventWithSlots, slots: flattenedSlots };
+    // 트랙 예약 가능 여부 확인
+    let canReserveByTrack = true;
+    if (userId && event.track !== 'COMMON') {
+      const preReg = await this.prisma.camperPreRegistration.findFirst({
+        where: {
+          claimedUserId: userId,
+          organizationId: event.organizationId,
+        },
+        select: { track: true },
+      });
+      canReserveByTrack = preReg?.track === event.track;
+    }
+
+    return { ...eventWithSlots, slots: flattenedSlots, canReserveByTrack };
   }
 
   private parseTrack(track?: string): Track | undefined {

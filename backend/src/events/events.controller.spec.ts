@@ -44,6 +44,7 @@ describe('EventsController', () => {
     it('이벤트를 생성한다', async () => {
       const createDto = {
         title: '테스트 이벤트',
+        description: '테스트 설명',
         track: Track.WEB,
         organizationId: 'org-123',
         startTime: new Date('2024-01-15T10:00:00Z'),
@@ -102,13 +103,23 @@ describe('EventsController', () => {
 
   describe('findOne', () => {
     it('이벤트 상세를 조회한다', async () => {
-      const mockEvent = { id: 1, title: 'Test Event' };
+      const mockEvent = { id: 1, title: 'Test Event', canReserveByTrack: true };
       eventsServiceMock.findOne.mockResolvedValue(mockEvent);
 
-      const result = await controller.findOne(1);
+      const result = await controller.findOne(1, 'user-123');
 
       expect(result).toEqual(mockEvent);
-      expect(eventsServiceMock.findOne).toHaveBeenCalledWith(1);
+      expect(eventsServiceMock.findOne).toHaveBeenCalledWith(1, 'user-123');
+    });
+
+    it('userId 없이도 이벤트 상세를 조회한다', async () => {
+      const mockEvent = { id: 1, title: 'Test Event', canReserveByTrack: true };
+      eventsServiceMock.findOne.mockResolvedValue(mockEvent);
+
+      const result = await controller.findOne(1, undefined);
+
+      expect(result).toEqual(mockEvent);
+      expect(eventsServiceMock.findOne).toHaveBeenCalledWith(1, undefined);
     });
   });
 
