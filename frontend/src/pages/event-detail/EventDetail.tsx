@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router';
 import type { EventDetail as EventDetailType, EventSlot } from '@/types/event';
 import { getEvent } from '@/api/event';
+import cn from '@/utils/cn';
 import {
   getSlotAvailability,
   updateEventSlot,
@@ -190,6 +191,22 @@ function EventDetail() {
     [id, fetchEvent],
   );
 
+  const handleAddSlot = useCallback(() => {
+    setIsCreatingSlot(true);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setEditingSlot(null);
+  }, []);
+
+  const handleCloseCreateModal = useCallback(() => {
+    setIsCreatingSlot(false);
+  }, []);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeletingSlot(null);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -208,7 +225,7 @@ function EventDetail() {
 
   return (
     <div className="flex justify-center">
-      <div className={`w-200 ${!isAdmin ? 'pb-24' : ''}`}>
+      <div className={cn('w-200', !isAdmin && 'pb-24')}>
         <div className="flex flex-col gap-6">
           <EventDetailHeader
             category={event.track}
@@ -250,14 +267,14 @@ function EventDetail() {
             isAdmin={isAdmin}
             onEditSlot={setEditingSlot}
             onDeleteSlot={setDeletingSlot}
-            onAddSlot={() => setIsCreatingSlot(true)}
+            onAddSlot={handleAddSlot}
           />
           <SlotEditModal
             open={!!editingSlot}
             mode="edit"
             slot={editingSlot}
             slotSchema={event?.slotSchema}
-            onClose={() => setEditingSlot(null)}
+            onClose={handleCloseEditModal}
             onSave={handleSaveSlot}
           />
           <SlotEditModal
@@ -266,7 +283,7 @@ function EventDetail() {
             eventId={Number(id)}
             slot={null}
             slotSchema={event?.slotSchema}
-            onClose={() => setIsCreatingSlot(false)}
+            onClose={handleCloseCreateModal}
             onSave={handleCreateSlot}
           />
           <ConfirmModal
@@ -275,7 +292,7 @@ function EventDetail() {
             message="이 일정을 제거하시겠습니까?"
             confirmText="제거"
             onConfirm={handleConfirmDelete}
-            onCancel={() => setDeletingSlot(null)}
+            onCancel={handleCancelDelete}
             variant="danger"
           />
         </div>
@@ -289,6 +306,8 @@ function EventDetail() {
           myReservation={myReservation}
           onReservationSuccess={handleReservationSuccess}
           onCancelSuccess={handleCancelSuccess}
+          canReserveByTrack={event.canReserveByTrack}
+          eventTrack={event.track}
         />
       )}
     </div>
