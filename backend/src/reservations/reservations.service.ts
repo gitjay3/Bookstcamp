@@ -38,6 +38,10 @@ type ReservationWithRelations = Prisma.ReservationGetPayload<{
   };
 }>;
 
+type ReservationWithTeamInfo = ReservationWithRelations & {
+  isTeamReservation: boolean;
+};
+
 @Injectable()
 export class ReservationsService {
   constructor(
@@ -208,20 +212,47 @@ export class ReservationsService {
     return { groupNumber: membership.groupNumber };
   }
 
-  async findAllByUser(userId: string): Promise<ReservationWithRelations[]> {
-    return this.prisma.reservation.findMany({
+  async findAllByUser(userId: string): Promise<ReservationWithTeamInfo[]> {
+    //사용자의 그룹 번호 조회
+    const memberships = await this.prisma.camperOrganization.findMany({
       where: { userId },
+      select: { organizationId: true, groupNumber: true },
+    });
+
+    // 개인 예약 조회
+    const personalReservations = await this.prisma.reservation.findMany({
+      where: { userId, status: 'CONFIRMED' },
       include: {
+        slot: { include: { event: true } },
+      },
+    });
+
+    // 팀 예약 조회 (내가 대표자가 아닌 경우)
+    const teamReservations = await this.prisma.reservation.findMany({
+      where: {
+        userId: { not: userId }, // 내가 대표자가 아닌 예약
+        status: 'CONFIRMED',
+        groupNumber: {
+          in: memberships
+            .map((m) => m.groupNumber)
+            .filter((g): g is number => g !== null),
+        },
         slot: {
-          include: {
-            event: true,
+          event: {
+            organizationId: { in: memberships.map((m) => m.organizationId) },
+            applicationUnit: 'TEAM',
           },
         },
       },
-      orderBy: {
-        reservedAt: 'desc',
+      include: {
+        slot: { include: { event: true } },
       },
-    }) as Promise<ReservationWithRelations[]>;
+    });
+
+    return [
+      ...personalReservations.map((r) => ({ ...r, isTeamReservation: false })),
+      ...teamReservations.map((r) => ({ ...r, isTeamReservation: true })),
+    ];
   }
 
   async findOne(id: number): Promise<ReservationWithRelations | null> {
@@ -237,18 +268,54 @@ export class ReservationsService {
     }) as Promise<ReservationWithRelations | null>;
   }
 
-  async findByUserAndEvent(
-    userId: string,
-    eventId: number,
-  ): Promise<ReservationWithRelations | null> {
-    return this.prisma.reservation.findFirst({
+  async findByUserAndEvent(userId: string, eventId: number) {
+    //  이벤트 정보 조회
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { applicationUnit: true, organizationId: true },
+    });
+
+    if (!event) return null;
+
+    //  개인 예약 확인
+    const personalReservation = await this.prisma.reservation.findFirst({
       where: {
         userId,
         slot: { eventId },
         status: { in: ['PENDING', 'CONFIRMED'] },
       },
-      include: { slot: { include: { event: true } } },
-    }) as Promise<ReservationWithRelations | null>;
+      include: { slot: true },
+    });
+
+    if (personalReservation) return personalReservation;
+
+    // 팀 이벤트인 경우, 팀원의 예약도 확인
+    if (event.applicationUnit === 'TEAM') {
+      const membership = await this.prisma.camperOrganization.findUnique({
+        where: {
+          userId_organizationId: {
+            userId,
+            organizationId: event.organizationId,
+          },
+        },
+        select: { groupNumber: true },
+      });
+
+      if (membership?.groupNumber) {
+        const teamReservation = await this.prisma.reservation.findFirst({
+          where: {
+            groupNumber: membership.groupNumber,
+            slot: { eventId },
+            status: { in: ['PENDING', 'CONFIRMED'] },
+          },
+          include: { slot: true },
+        });
+
+        if (teamReservation) return teamReservation;
+      }
+    }
+
+    return null;
   }
 
   async cancel(id: number, userId: string): Promise<Reservation> {
