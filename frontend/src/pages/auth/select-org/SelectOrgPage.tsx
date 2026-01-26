@@ -3,12 +3,16 @@ import { useNavigate } from 'react-router';
 import Button from '@/components/Button';
 import Dropdown from '@/components/Dropdown';
 import { getMyOrganizations, type Organization } from '@/api/organization';
+import { useAuth } from '@/store/AuthContext';
 
 function SelectOrgPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [myOrganizations, setMyOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     getMyOrganizations()
@@ -40,8 +44,12 @@ function SelectOrgPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-white p-4">
       <div className="w-full max-w-md space-y-8 text-center">
         <div className="space-y-4">
-          <h1 className="text-3xl font-bold text-gray-900">소속을 선택해주세요</h1>
-          <p className="text-gray-600">현재 참여 중인 기수 및 과정을 선택해주세요.</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isAdmin ? '관리할 기수를 선택해주세요' : '소속을 선택해주세요'}
+          </h1>
+          <p className="text-gray-600">
+            {isAdmin ? '운영할 기수를 선택해주세요.' : '현재 참여 중인 기수 및 과정을 선택해주세요.'}
+          </p>
         </div>
 
         <div className="space-y-6">
