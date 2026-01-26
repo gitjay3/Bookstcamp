@@ -25,6 +25,8 @@ export interface EventSlot {
     name: string;
     username: string;
     avatarUrl: string | null;
+    groupNumber?: number;
+    teamMembers?: TeamMember[];
   }[];
 }
 
@@ -41,4 +43,10 @@ export interface SlotSchema {
 export interface EventDetail extends Event {
   slotSchema: SlotSchema;
   slots: EventSlot[];
+}
+
+export interface TeamMember {
+  name: string;
+  username: string;
+  avatarUrl: string | null;
 }

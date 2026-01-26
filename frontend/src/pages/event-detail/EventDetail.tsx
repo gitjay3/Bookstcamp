@@ -94,14 +94,15 @@ function EventDetail() {
 
           // 인원수가 변했거나, 예약자 명단(이름 등)이 변한 경우 업데이트
           const isCountChanged = slot.currentCount !== updated.currentCount;
-          const isReserverChanged = JSON.stringify(slot.reservations) !== JSON.stringify(updated.reservations);
+          const isReserverChanged =
+            JSON.stringify(slot.reservations) !== JSON.stringify(updated.reservations);
 
           if (isCountChanged || isReserverChanged) {
             changed = true;
-            return { 
-              ...slot, 
+            return {
+              ...slot,
               currentCount: updated.currentCount,
-              reservations: updated.reservations 
+              reservations: updated.reservations,
             };
           }
           return slot;
@@ -246,6 +247,7 @@ function EventDetail() {
             selectedSlotId={selectedSlotId}
             setSelectedSlotId={setSelectedSlotId}
             myReservation={myReservation}
+            applicationUnit={event.applicationUnit}
             disabled={event.status === 'ONGOING' && !hasToken}
             isAdmin={isAdmin}
             onEditSlot={setEditingSlot}
