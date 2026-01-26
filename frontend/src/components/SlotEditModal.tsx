@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { EventSlot, SlotSchema } from '@/types/event';
-
-const FIELD_ORDER = ['content', 'eventDate', 'startTime', 'endTime', 'location', 'mentorName'];
+import { sortSlotFields } from '@/constants/slot-field';
 
 const FIELD_TYPE_TO_INPUT_TYPE: Record<string, string> = {
   time: 'time',
@@ -110,10 +109,7 @@ export default function SlotEditModal({
         <h2 className="text-lg font-semibold">{mode === 'create' ? '일정 추가' : '일정 수정'}</h2>
 
         <div className="mt-4 flex flex-col gap-4">
-          {slotSchema?.fields
-            .slice()
-            .sort((a, b) => FIELD_ORDER.indexOf(a.id) - FIELD_ORDER.indexOf(b.id))
-            .map((field) => (
+          {sortSlotFields(slotSchema?.fields ?? []).map((field) => (
               <div key={field.id}>
                 <label
                   htmlFor={`slot-field-${field.id}`}
