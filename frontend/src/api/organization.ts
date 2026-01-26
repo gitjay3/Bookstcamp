@@ -8,6 +8,10 @@ export interface Organization {
   updatedAt: string;
 }
 
+export interface CreateOrganizationDto {
+  name: string;
+}
+
 export async function getOrganization(id: string): Promise<Organization> {
   const { data } = await api.get<Organization>(`/organizations/${id}`);
   return data;
@@ -15,6 +19,19 @@ export async function getOrganization(id: string): Promise<Organization> {
 
 export async function getMyOrganizations(): Promise<Organization[]> {
   const { data } = await api.get<Organization[]>('/organizations/me');
+  return data;
+}
+
+export async function createOrganization(dto: CreateOrganizationDto): Promise<Organization> {
+  const { data } = await api.post<Organization>('/organizations', dto);
+  return data;
+}
+
+export async function updateOrganization(
+  id: string,
+  dto: CreateOrganizationDto,
+): Promise<Organization> {
+  const { data } = await api.patch<Organization>(`/organizations/${id}`, dto);
   return data;
 }
 
