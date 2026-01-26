@@ -10,7 +10,6 @@ export class ApiException extends HttpException {
   }
 }
 
-// TODO : 예외 리스트 필요시 추가
 export class ReservationPeriodException extends ApiException {
   constructor() {
     super('예약 가능한 기간이 아닙니다', HttpStatus.BAD_REQUEST);

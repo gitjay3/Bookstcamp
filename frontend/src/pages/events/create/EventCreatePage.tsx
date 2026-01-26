@@ -68,7 +68,7 @@ export default function EventCreatePage() {
             closeDate: endDate,
             openTime: startTimeStr,
             closeTime: endTimeStr,
-            slotSchema: event.slotSchema as unknown as EventFormValues['slotSchema'], // TODO: slotSchema 구조 적용하고 as~ 부분 지워야함
+            slotSchema: event.slotSchema,
             slots: convertedSlots,
           });
         }
