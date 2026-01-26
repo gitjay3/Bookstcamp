@@ -8,17 +8,17 @@ interface OrganizationListTableProps {
 
 function OrganizationListTable({ organizations, onEdit }: OrganizationListTableProps) {
   return (
-    <div className="mx-auto w-full">
+    <div className="mx-auto w-full overflow-hidden rounded-2xl border border-neutral-border-default bg-white">
       <table className="w-full table-fixed text-left">
         <thead className="bg-surface-white border-neutral-border-default border-b">
           <tr>
             <th scope="col" className="w-120 px-6 py-3 font-medium">
               조직명
             </th>
-            <th scope="col" className="w-30 px-6 py-3 font-medium">
+            <th scope="col" className="w-40 px-6 py-3 font-medium">
               캠퍼 수
             </th>
-            <th scope="col" className="w-30 px-6 py-3 font-medium">
+            <th scope="col" className="w-40 px-6 py-3 font-medium">
               이벤트 수
             </th>
             <th scope="col" className="px-6 py-3 text-right font-medium">

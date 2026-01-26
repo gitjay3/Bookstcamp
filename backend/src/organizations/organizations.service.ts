@@ -71,7 +71,7 @@ export class OrganizationsService {
   async findMyOrganizations(userId: string, role: Role) {
     if (role === Role.ADMIN) {
       const organizations = await this.prisma.organization.findMany({
-        orderBy: { name: 'asc' },
+        orderBy: { createdAt: 'desc' },
       });
       return this.attachOrganizationStats(organizations);
     }
