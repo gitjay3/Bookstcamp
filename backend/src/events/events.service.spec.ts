@@ -174,6 +174,85 @@ describe('EventsService', () => {
         '존재하지 않는 이벤트입니다.',
       );
     });
+
+    it('사용자 트랙과 이벤트 트랙이 일치하면 canReserveByTrack이 true이다', async () => {
+      const mockEvent = {
+        id: 1,
+        title: 'WEB Event',
+        track: Track.WEB,
+        organizationId: 'org-1',
+        slots: [],
+      };
+
+      prismaMock.event.findUnique.mockResolvedValue(mockEvent);
+      prismaMock.camperPreRegistration.findFirst.mockResolvedValue({
+        track: Track.WEB,
+      });
+
+      const result = await service.findOne(1, 'user-123');
+
+      expect(result.canReserveByTrack).toBe(true);
+      expect(prismaMock.camperPreRegistration.findFirst).toHaveBeenCalledWith({
+        where: {
+          claimedUserId: 'user-123',
+          organizationId: 'org-1',
+        },
+        select: { track: true },
+      });
+    });
+
+    it('사용자 트랙과 이벤트 트랙이 불일치하면 canReserveByTrack이 false이다', async () => {
+      const mockEvent = {
+        id: 1,
+        title: 'ANDROID Event',
+        track: Track.ANDROID,
+        organizationId: 'org-1',
+        slots: [],
+      };
+
+      prismaMock.event.findUnique.mockResolvedValue(mockEvent);
+      prismaMock.camperPreRegistration.findFirst.mockResolvedValue({
+        track: Track.WEB,
+      });
+
+      const result = await service.findOne(1, 'user-123');
+
+      expect(result.canReserveByTrack).toBe(false);
+    });
+
+    it('COMMON 이벤트는 트랙 체크 없이 canReserveByTrack이 true이다', async () => {
+      const mockEvent = {
+        id: 1,
+        title: 'Common Event',
+        track: Track.COMMON,
+        organizationId: 'org-1',
+        slots: [],
+      };
+
+      prismaMock.event.findUnique.mockResolvedValue(mockEvent);
+
+      const result = await service.findOne(1, 'user-123');
+
+      expect(result.canReserveByTrack).toBe(true);
+      expect(prismaMock.camperPreRegistration.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('조직에 등록되지 않은 사용자는 canReserveByTrack이 false이다', async () => {
+      const mockEvent = {
+        id: 1,
+        title: 'WEB Event',
+        track: Track.WEB,
+        organizationId: 'org-1',
+        slots: [],
+      };
+
+      prismaMock.event.findUnique.mockResolvedValue(mockEvent);
+      prismaMock.camperPreRegistration.findFirst.mockResolvedValue(null);
+
+      const result = await service.findOne(1, 'unregistered-user');
+
+      expect(result.canReserveByTrack).toBe(false);
+    });
   });
 
   describe('create', () => {
