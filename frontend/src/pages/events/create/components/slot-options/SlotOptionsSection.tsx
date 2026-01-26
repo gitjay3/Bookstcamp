@@ -254,7 +254,29 @@ export default function SlotOptionsSection() {
 
   return (
     <>
-      <SectionCard title="선택지 목록" description="사용자가 선택할 수 있는 옵션을 등록하세요.">
+      <SectionCard
+        title="선택지 목록"
+        description={
+          <div className="flex flex-col gap-3">
+            <p>참가자가 선택할 수 있는 옵션(슬롯)을 등록하세요.</p>
+            <div className="flex flex-col gap-1.5 text-14 bg-neutral-bg-secondary/50 rounded-lg p-3 border border-neutral-border-default/50">
+              <div className="flex items-start gap-2">
+                <span className="font-semibold text-neutral-text-primary min-w-[52px]">템플릿</span>
+                <span>기존 템플릿을 불러온 후 [선택지 추가] 버튼으로 직접 구성할 수 있습니다.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-semibold text-neutral-text-primary min-w-[52px]">엑셀</span>
+                <div className="flex flex-col gap-1">
+                  <span>[엑셀 업로드]를 통해 선택지를 한 번에 등록할 수 있습니다.</span>
+                  <span className="text-13 text-neutral-text-tertiary">
+                    * 첫 행은 필드 이름, 이후 행은 선택지 데이터로 자동 인식됩니다.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      >
         <div className="mb-4 flex items-end justify-between">
           <div className="min-h-4">
             {!!errors.slots && (
