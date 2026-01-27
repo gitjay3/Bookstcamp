@@ -41,4 +41,5 @@ export interface SlotSchema {
 export interface EventDetail extends Event {
   slotSchema: SlotSchema;
   slots: EventSlot[];
+  canReserveByTrack?: boolean;
 }

@@ -7,6 +7,7 @@ import cn from '@/utils/cn';
 import type { Track, ApplicationUnit, SlotSchemaField } from '@/types/event';
 import { getMyReservations, cancelReservation } from '@/api/reservation';
 import type { ReservationApiResponse } from '@/types/BEapi';
+import { getFieldPriority } from '@/constants/slot-field';
 
 type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 type ViewMode = 'grid' | 'ticket';
@@ -51,6 +52,7 @@ function getOrderedExtraInfo(
 
   return slotSchema.fields
     .filter((field) => extraInfo[field.id] !== undefined)
+    .sort((a, b) => getFieldPriority(a.id) - getFieldPriority(b.id))
     .map((field) => ({
       label: field.name,
       value: extraInfo[field.id],

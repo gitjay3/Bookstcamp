@@ -246,6 +246,26 @@ async function main() {
   });
   console.log('✓ 이벤트 3 생성:', event3.title);
 
+  // 4-4. 공통 이벤트 (COMMON)
+  const event4 = await prisma.event.upsert({
+    where: { id: 4 },
+    update: {},
+    create: {
+      id: 4,
+      title: '전체 공통: 취업 특강',
+      description:
+        '모든 트랙 캠퍼들을 위한 취업 준비 특강입니다. 이력서 작성법, 면접 팁 등을 다룹니다.',
+      track: Track.COMMON,
+      applicationUnit: ApplicationUnit.INDIVIDUAL,
+      creatorId: adminUserId,
+      organizationId: organization.id,
+      startTime: new Date('2026-03-01T00:00:00+09:00'),
+      endTime: new Date('2026-03-31T23:59:59+09:00'),
+      slotSchema: defaultSlotSchema,
+    },
+  });
+  console.log('✓ 이벤트 4 생성:', event4.title);
+
   // 5. 이벤트 슬롯 생성
   const slots = [
     {
@@ -386,6 +406,35 @@ async function main() {
         f4: '16:00',
         f5: 'Zoom',
         f6: 'JK',
+      },
+    },
+    // event4 (COMMON) 슬롯
+    {
+      id: 11,
+      eventId: 4,
+      maxCapacity: 30,
+      currentCount: 5,
+      extraInfo: {
+        f1: '이력서 작성법',
+        f2: '2026-03-20',
+        f3: '14:00',
+        f4: '15:30',
+        f5: '대강당',
+        f6: '취업 멘토',
+      },
+    },
+    {
+      id: 12,
+      eventId: 4,
+      maxCapacity: 30,
+      currentCount: 10,
+      extraInfo: {
+        f1: '면접 준비 팁',
+        f2: '2026-03-20',
+        f3: '16:00',
+        f4: '17:30',
+        f5: '대강당',
+        f6: '취업 멘토',
       },
     },
   ];

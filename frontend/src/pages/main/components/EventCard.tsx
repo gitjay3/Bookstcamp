@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import ConfirmModal from '@/components/DropdownConfirmModal';
 import ApplicationUnitLabel from '@/components/ApplicationUnitLabel';
 import EventCategoryLabel from '@/components/EventCategoryLabel';
@@ -38,6 +38,10 @@ function EventCard({ event, onDeleted }: EventCardProps) {
     setIsDeleteModalOpen(false);
     onDeleted?.();
   };
+
+  const handleCancelDelete = useCallback(() => {
+    setIsDeleteModalOpen(false);
+  }, []);
 
   const menuItems = [
     {
@@ -85,7 +89,7 @@ function EventCard({ event, onDeleted }: EventCardProps) {
         message="이 이벤트를 삭제하시겠습니까? 모든 일정이 함께 삭제됩니다."
         confirmText="삭제"
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setIsDeleteModalOpen(false)}
+        onCancel={handleCancelDelete}
         variant="danger"
       />
     </>

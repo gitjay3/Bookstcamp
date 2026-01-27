@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router';
 import type { EventDetail as EventDetailType, EventSlot } from '@/types/event';
 import { getEvent } from '@/api/event';
+import cn from '@/utils/cn';
 import {
   getSlotAvailability,
   updateEventSlot,
@@ -38,6 +39,8 @@ function EventDetail() {
   const eventId = id ? Number(id) : NaN;
   const eventStatus = event?.status;
 
+  const canReserveByTrack = event?.canReserveByTrack !== false;
+
   const {
     position,
     totalWaiting,
@@ -47,7 +50,7 @@ function EventDetail() {
     isNew,
   } = useQueue({
     eventId,
-    enabled: eventStatus === 'ONGOING' && isLoggedIn,
+    enabled: eventStatus === 'ONGOING' && isLoggedIn && canReserveByTrack,
   });
 
   // 이벤트 정보 불러오기
@@ -190,6 +193,22 @@ function EventDetail() {
     [id, fetchEvent],
   );
 
+  const handleAddSlot = useCallback(() => {
+    setIsCreatingSlot(true);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setEditingSlot(null);
+  }, []);
+
+  const handleCloseCreateModal = useCallback(() => {
+    setIsCreatingSlot(false);
+  }, []);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeletingSlot(null);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -208,7 +227,7 @@ function EventDetail() {
 
   return (
     <div className="flex justify-center">
-      <div className={`w-200 ${!isAdmin ? 'pb-24' : ''}`}>
+      <div className={cn('w-200', !isAdmin && 'pb-24')}>
         <div className="flex flex-col gap-6">
           <EventDetailHeader
             category={event.track}
@@ -220,24 +239,23 @@ function EventDetail() {
           <hr className="border-neutral-border-default" />
 
           {/* 대기열 상태 (ONGOING일 때만 표시, 관리자 제외) */}
-          {!isAdmin &&
-            event.status === 'ONGOING' &&
-            (isLoggedIn ? (
-              <QueueStatus
-                position={position}
-                totalWaiting={totalWaiting}
-                hasToken={hasToken}
-                tokenExpiresAt={tokenExpiresAt}
-                isLoading={isQueueLoading}
-                isNew={isNew}
-              />
-            ) : (
-              <div className="border-neutral-border-default bg-neutral-surface-default rounded-lg border p-4">
-                <p className="text-neutral-text-secondary text-center">
-                  예약하려면 로그인이 필요합니다.
-                </p>
-              </div>
-            ))}
+          {!isAdmin && event.status === 'ONGOING' && isLoggedIn && canReserveByTrack && (
+            <QueueStatus
+              position={position}
+              totalWaiting={totalWaiting}
+              hasToken={hasToken}
+              tokenExpiresAt={tokenExpiresAt}
+              isLoading={isQueueLoading}
+              isNew={isNew}
+            />
+          )}
+          {!isAdmin && event.status === 'ONGOING' && !isLoggedIn && (
+            <div className="border-neutral-border-default bg-neutral-surface-default rounded-lg border p-4">
+              <p className="text-neutral-text-secondary text-center">
+                예약하려면 로그인이 필요합니다.
+              </p>
+            </div>
+          )}
 
           <SlotList
             status={event.status}
@@ -250,14 +268,14 @@ function EventDetail() {
             isAdmin={isAdmin}
             onEditSlot={setEditingSlot}
             onDeleteSlot={setDeletingSlot}
-            onAddSlot={() => setIsCreatingSlot(true)}
+            onAddSlot={handleAddSlot}
           />
           <SlotEditModal
             open={!!editingSlot}
             mode="edit"
             slot={editingSlot}
             slotSchema={event?.slotSchema}
-            onClose={() => setEditingSlot(null)}
+            onClose={handleCloseEditModal}
             onSave={handleSaveSlot}
           />
           <SlotEditModal
@@ -266,7 +284,7 @@ function EventDetail() {
             eventId={Number(id)}
             slot={null}
             slotSchema={event?.slotSchema}
-            onClose={() => setIsCreatingSlot(false)}
+            onClose={handleCloseCreateModal}
             onSave={handleCreateSlot}
           />
           <ConfirmModal
@@ -275,7 +293,7 @@ function EventDetail() {
             message="이 일정을 제거하시겠습니까?"
             confirmText="제거"
             onConfirm={handleConfirmDelete}
-            onCancel={() => setDeletingSlot(null)}
+            onCancel={handleCancelDelete}
             variant="danger"
           />
         </div>
@@ -289,6 +307,8 @@ function EventDetail() {
           myReservation={myReservation}
           onReservationSuccess={handleReservationSuccess}
           onCancelSuccess={handleCancelSuccess}
+          canReserveByTrack={event.canReserveByTrack}
+          eventTrack={event.track}
         />
       )}
     </div>
