@@ -148,6 +148,7 @@ model CamperOrganization {
   userId         String   @db.Uuid()
   organizationId String   @db.Uuid()
   camperId       String? // 조직 내 캠퍼 ID (예: J283)
+  slackMemberId  String? // 슬랙 멤버 ID (예: U09A5UPP667)
   groupNumber    Int? // 그룹 번호
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
