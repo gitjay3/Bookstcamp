@@ -323,13 +323,14 @@ async function main() {
   const event5 = await prisma.event.upsert({
     where: { id: 5 },
     update: {
-        startTime: tenMinutesLater,
-        endTime: oneHourLater,
+      startTime: tenMinutesLater,
+      endTime: oneHourLater,
     },
     create: {
       id: 5,
       title: '[TEST] 알림 테스트용 이벤트 (10분 뒤 오픈)',
-      description: '알림 기능 테스트를 위한 이벤트입니다. 예약 오픈 10분 전입니다.',
+      description:
+        '알림 기능 테스트를 위한 이벤트입니다. 예약 오픈 10분 전입니다.',
       track: Track.WEB,
       applicationUnit: ApplicationUnit.INDIVIDUAL,
       creatorId: adminUserId,
@@ -339,7 +340,10 @@ async function main() {
       slotSchema: defaultSlotSchema,
     },
   });
-  console.log('✓ 이벤트 5 (알림 테스트) 생성, 시작 시간:', tenMinutesLater.toLocaleString());
+  console.log(
+    '✓ 이벤트 5 (알림 테스트) 생성, 시작 시간:',
+    tenMinutesLater.toLocaleString(),
+  );
 
   // ========================================
   // K6 부하 테스트용 이벤트 (ID 100~)
