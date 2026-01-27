@@ -24,8 +24,8 @@
     - [Backend \& Database](#backend--database)
     - [Infrastructure](#infrastructure)
   - [설치 및 실행](#설치-및-실행)
-    - [모니터링](#모니터링-prometheus--grafana)
-    - [부하 테스트](#부하-테스트-k6)
+    - [모니터링 (Prometheus + Grafana)](#모니터링-prometheus--grafana)
+    - [부하 테스트 (k6)](#부하-테스트-k6)
   - [라이선스](#라이선스)
 
 <br>
@@ -131,6 +131,8 @@ pnpm db:seed:local
 - 로컬 확인: http://localhost
 - API 문서(Swagger): http://localhost/api-docs
 
+<br>
+
 ### 모니터링 (Prometheus + Grafana)
 
 ```bash
@@ -143,6 +145,8 @@ pnpm docker:local:down
 
 - Grafana: http://localhost:3000 (admin / admin)
 - Prometheus: http://localhost:9090
+
+<br>
 
 ### 부하 테스트 (k6)
 
@@ -168,7 +172,16 @@ pnpm k6:logic
 pnpm k6:reset
 ```
 
+| 테스트 | 설명 |
+| ------ | ---- |
+| competition | 200명이 정원 5명 슬롯에 동시 예약 시도. Redis 동시성 제어 검증 |
+| stress | 1000 VU 고부하 상황에서 시스템 안정성 테스트 |
+| spike | 5000 VU 순간 폭주 시나리오. 선착순 예약 오픈 시뮬레이션 |
+| team | 팀 이벤트에서 같은 팀원의 중복 예약 방지 검증 |
+| logic | 중복 예약 방지, 취소 후 재예약 등 비즈니스 로직 검증 |
+
 <br>
 
 ## 라이선스
+
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
