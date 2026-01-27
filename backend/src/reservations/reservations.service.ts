@@ -24,6 +24,7 @@ import {
   ForbiddenTrackException,
 } from '../../common/exceptions/api.exception';
 import { MetricsService } from '../metrics/metrics.service';
+import { isUserEligibleForTrack } from '../../common/utils/track.util';
 
 type ReservationWithRelations = Prisma.ReservationGetPayload<{
   include: {
@@ -133,22 +134,14 @@ export class ReservationsService {
     }
 
     // 트랙 검증
-    if (event.track !== 'COMMON') {
-      const preReg = await this.prisma.camperPreRegistration.findFirst({
-        where: {
-          claimedUserId: userId,
-          organizationId: event.organizationId,
-        },
-        select: { track: true, status: true },
-      });
-
-      if (!preReg) {
-        throw new ForbiddenTrackException();
-      }
-
-      if (preReg.track !== event.track) {
-        throw new ForbiddenTrackException();
-      }
+    const eligible = await isUserEligibleForTrack(
+      this.prisma,
+      userId,
+      event.track,
+      event.organizationId,
+    );
+    if (!eligible) {
+      throw new ForbiddenTrackException();
     }
 
     // TODO: applicationUnit(INDIVIDUAL/TEAM) 관련 검증

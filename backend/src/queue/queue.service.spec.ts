@@ -3,7 +3,9 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { QueueService } from './queue.service';
 import { RedisService } from '../redis/redis.service';
 import { MetricsService } from '../metrics/metrics.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { QUEUE_CLEANUP_QUEUE } from './queue.constants';
+import { ForbiddenTrackException } from '../../common/exceptions/api.exception';
 
 const createRedisMock = () => {
   const clientMock = {
@@ -42,20 +44,38 @@ const createCleanupQueueMock = () => ({
   add: jest.fn(),
 });
 
+const createPrismaMock = () => ({
+  event: {
+    findUnique: jest.fn(),
+  },
+  camperPreRegistration: {
+    findFirst: jest.fn(),
+  },
+});
+
 describe('QueueService', () => {
   let service: QueueService;
   let redisMock: ReturnType<typeof createRedisMock>;
   let metricsMock: ReturnType<typeof createMetricsMock>;
+  let prismaMock: ReturnType<typeof createPrismaMock>;
 
   beforeEach(async () => {
     redisMock = createRedisMock();
     metricsMock = createMetricsMock();
+    prismaMock = createPrismaMock();
+
+    // 기본값: COMMON 트랙 이벤트 (모든 사용자 허용)
+    prismaMock.event.findUnique.mockResolvedValue({
+      track: 'COMMON',
+      organizationId: 1,
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QueueService,
         { provide: RedisService, useValue: redisMock },
         { provide: MetricsService, useValue: metricsMock },
+        { provide: PrismaService, useValue: prismaMock },
         {
           provide: getQueueToken(QUEUE_CLEANUP_QUEUE),
           useValue: createCleanupQueueMock(),
@@ -102,6 +122,57 @@ describe('QueueService', () => {
 
       expect(result).toEqual({ position: 3, isNew: false });
       expect(metricsMock.recordQueueEntry).toHaveBeenCalledWith(eventId, false);
+    });
+
+    it('트랙이 일치하는 사용자는 대기열에 진입할 수 있다', async () => {
+      const { clientMock } = redisMock;
+      clientMock.hget.mockResolvedValue(null);
+      clientMock.zrank.mockResolvedValue(0);
+      clientMock.zcard.mockResolvedValue(1);
+
+      // WEB 전용 이벤트
+      prismaMock.event.findUnique.mockResolvedValue({
+        track: 'WEB',
+        organizationId: 1,
+      });
+      // 사용자도 WEB 트랙
+      prismaMock.camperPreRegistration.findFirst.mockResolvedValue({
+        track: 'WEB',
+      });
+
+      const result = await service.enterQueue(eventId, userId, sessionId);
+
+      expect(result.isNew).toBe(true);
+    });
+
+    it('트랙이 불일치하면 ForbiddenTrackException이 발생한다', async () => {
+      // ANDROID 전용 이벤트
+      prismaMock.event.findUnique.mockResolvedValue({
+        track: 'ANDROID',
+        organizationId: 1,
+      });
+      // 사용자는 WEB 트랙
+      prismaMock.camperPreRegistration.findFirst.mockResolvedValue({
+        track: 'WEB',
+      });
+
+      await expect(
+        service.enterQueue(eventId, userId, sessionId),
+      ).rejects.toThrow(ForbiddenTrackException);
+    });
+
+    it('사전등록이 없으면 ForbiddenTrackException이 발생한다', async () => {
+      // ANDROID 전용 이벤트
+      prismaMock.event.findUnique.mockResolvedValue({
+        track: 'ANDROID',
+        organizationId: 1,
+      });
+      // 사전등록 없음
+      prismaMock.camperPreRegistration.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.enterQueue(eventId, userId, sessionId),
+      ).rejects.toThrow(ForbiddenTrackException);
     });
   });
 

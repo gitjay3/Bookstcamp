@@ -6,6 +6,7 @@ import { Track, Event, EventSlot } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { toPrismaJson } from 'src/common/utils/to-json';
+import { isUserEligibleForTrack } from '../../common/utils/track.util';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 type EventWithSlots = Event & { slots: EventSlot[] };
@@ -204,17 +205,14 @@ export class EventsService {
     );
 
     // 트랙 예약 가능 여부 확인
-    let canReserveByTrack = true;
-    if (userId && event.track !== 'COMMON') {
-      const preReg = await this.prisma.camperPreRegistration.findFirst({
-        where: {
-          claimedUserId: userId,
-          organizationId: event.organizationId,
-        },
-        select: { track: true },
-      });
-      canReserveByTrack = preReg?.track === event.track;
-    }
+    const canReserveByTrack = userId
+      ? await isUserEligibleForTrack(
+          this.prisma,
+          userId,
+          event.track,
+          event.organizationId,
+        )
+      : true;
 
     return { ...eventWithSlots, slots: flattenedSlots, canReserveByTrack };
   }

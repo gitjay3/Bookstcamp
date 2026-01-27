@@ -5,12 +5,16 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { CleanupJobData, QUEUE_CLEANUP_QUEUE } from './queue.constants';
 import { MetricsService } from '../metrics/metrics.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { ForbiddenTrackException } from '../../common/exceptions/api.exception';
+import { isUserEligibleForTrack } from '../../common/utils/track.util';
 
 @Injectable()
 export class QueueService {
   constructor(
     private readonly redisService: RedisService,
     private readonly metricsService: MetricsService,
+    private readonly prisma: PrismaService,
     @InjectQueue(QUEUE_CLEANUP_QUEUE)
     private cleanupQueue: Queue<CleanupJobData>,
   ) {}
@@ -43,6 +47,9 @@ export class QueueService {
     userId: string,
     sessionId: string,
   ): Promise<{ position: number; isNew: boolean }> {
+    // 트랙 검증
+    await this.validateTrackOrThrow(eventId, userId);
+
     const client = this.redisService.getClient();
     const queueKey = this.getQueueKey(eventId);
     const statusKey = this.getUserStatusKey(eventId, userId);
@@ -241,5 +248,28 @@ export class QueueService {
 
     await pipeline.exec();
     return expiredUserIds.length;
+  }
+
+  // 트랙 검증: COMMON이 아닌 이벤트는 해당 트랙 캠퍼만 진입 가능
+  private async validateTrackOrThrow(
+    eventId: number,
+    userId: string,
+  ): Promise<void> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { track: true, organizationId: true },
+    });
+
+    if (!event) return;
+
+    const eligible = await isUserEligibleForTrack(
+      this.prisma,
+      userId,
+      event.track,
+      event.organizationId,
+    );
+    if (!eligible) {
+      throw new ForbiddenTrackException();
+    }
   }
 }
