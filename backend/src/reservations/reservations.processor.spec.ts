@@ -126,6 +126,7 @@ describe('ReservationsProcessor', () => {
           userId,
           slotId,
           status: 'CONFIRMED',
+          groupNumber: null,
         },
       });
       expect(metricsMock.recordQueueJobComplete).toHaveBeenCalledWith(
