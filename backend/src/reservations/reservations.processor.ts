@@ -17,7 +17,12 @@ import {
 } from '../../common/exceptions/api.exception';
 import { MetricsService } from '../metrics/metrics.service';
 
-@Processor(RESERVATION_QUEUE)
+/**
+ * vCPU 2개, RAM 8GB 서버 기준 Worker 설정
+ * - concurrency: 5 (DB Connection Pool 15개의 1/3)
+ * - DB 연결 경쟁 방지 및 처리량 확보
+ */
+@Processor(RESERVATION_QUEUE, { concurrency: 5 })
 export class ReservationsProcessor extends WorkerHost {
   private readonly logger = new Logger(ReservationsProcessor.name);
 
