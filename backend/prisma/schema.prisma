@@ -135,10 +135,12 @@ model AuthAccount {
 }
 
 model Organization {
-  id        String   @id @default(uuid()) @db.Uuid()
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String  @id @default(uuid()) @db.Uuid()
+  name             String
+  slackBotToken    String? // 암호화된 슬랙 봇 토큰
+  slackWorkspaceId String? // 검증용 슬랙 워크스페이스 ID (T...)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   events           Event[]
   campers          CamperOrganization[]
