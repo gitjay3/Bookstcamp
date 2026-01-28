@@ -9,6 +9,9 @@ import {
   Delete,
   UseInterceptors,
   UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
@@ -157,7 +160,18 @@ export class OrganizationsController {
   @ApiResponse({ status: 201, description: '업로드 및 Upsert 성공' })
   uploadCampers(
     @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+          new FileTypeValidator({
+            fileType:
+              /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|application\/vnd\.ms-excel/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
   ) {
     return this.organizationsService.uploadCampers(id, file.buffer);
   }
