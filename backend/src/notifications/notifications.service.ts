@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { SlackService } from '../slack/slack.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -190,5 +191,36 @@ export class NotificationsService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * 종료된지 24시간이 지난 이벤트의 알림 데이터를 주기적으로 삭제합니다.
+   * 매일 자정(00:00)에 실행됩니다.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async handleCleanupOldNotifications() {
+    this.logger.log('Starting cleanup of old notifications...');
+
+    const threshold = new Date();
+    threshold.setHours(threshold.getHours() - 24);
+
+    try {
+      const { count } = await this.prisma.eventNotification.deleteMany({
+        where: {
+          event: {
+            endTime: {
+              lt: threshold,
+            },
+          },
+        },
+      });
+
+      this.logger.log(
+        `Cleanup finished. Removed ${count} old notification records.`,
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error('Failed to cleanup old notifications', errorMessage);
+    }
   }
 }
