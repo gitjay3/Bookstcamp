@@ -6,10 +6,14 @@ export interface Organization {
   name: string;
   camperCount?: number;
   eventCount?: number;
+  isSlackEnabled?: boolean;
+  slackWorkspaceId?: string | null;
 }
 
 export interface CreateOrganizationDto {
   name: string;
+  slackWorkspaceId?: string;
+  slackBotToken?: string;
 }
 
 export async function getOrganization(id: string): Promise<Organization> {
@@ -29,7 +33,7 @@ export async function createOrganization(dto: CreateOrganizationDto): Promise<Or
 
 export async function updateOrganization(
   id: string,
-  dto: CreateOrganizationDto,
+  dto: Partial<CreateOrganizationDto>,
 ): Promise<Organization> {
   const { data } = await api.patch<Organization>(`/organizations/${id}`, dto);
   return data;
@@ -84,6 +88,7 @@ export interface CamperProfile {
   groupNumber?: number | null;
   slackMemberId: string | null;
   profileUrl: string | null;
+  isSlackEnabled: boolean;
 }
 
 export async function getMyCamperProfile(orgId: string): Promise<CamperProfile> {

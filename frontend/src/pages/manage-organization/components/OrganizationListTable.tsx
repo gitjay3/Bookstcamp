@@ -12,16 +12,19 @@ function OrganizationListTable({ organizations, onEdit }: OrganizationListTableP
       <table className="w-full table-fixed text-left">
         <thead className="bg-surface-white border-neutral-border-default border-b">
           <tr>
-            <th scope="col" className="w-120 px-6 py-3 font-medium">
+            <th scope="col" className="w-120 px-6 py-3 font-24">
               조직명
             </th>
-            <th scope="col" className="w-40 px-6 py-3 font-medium">
+            <th scope="col" className="w-40 px-6 py-3 font-24">
               캠퍼 수
             </th>
-            <th scope="col" className="w-40 px-6 py-3 font-medium">
+            <th scope="col" className="w-40 px-6 py-3 font-24">
               이벤트 수
             </th>
-            <th scope="col" className="px-6 py-3 text-right font-medium">
+            <th scope="col" className="w-60 px-6 py-3 font-24">
+              슬랙 워크스페이스
+            </th>
+            <th scope="col" className="px-6 py-3 text-right font-24">
               관리
             </th>
           </tr>
@@ -29,7 +32,7 @@ function OrganizationListTable({ organizations, onEdit }: OrganizationListTableP
         <tbody className="divide-neutral-border-default text-neutral-text-secondary divide-y bg-white">
           {organizations.length === 0 ? (
             <tr>
-              <td className="text-neutral-text-tertiary px-6 py-10 text-center" colSpan={4}>
+              <td className="text-neutral-text-tertiary px-6 py-10 text-center" colSpan={5}>
                 표시할 조직이 없습니다.
               </td>
             </tr>
