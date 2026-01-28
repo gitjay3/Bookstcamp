@@ -10,4 +10,17 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsNotEmpty()
   name?: string;
+
+  @ApiPropertyOptional({ description: '슬랙 봇 토큰', example: 'xoxb-...' })
+  @IsString()
+  @IsOptional()
+  slackBotToken?: string;
+
+  @ApiPropertyOptional({
+    description: '슬랙 워크스페이스 ID',
+    example: 'T01234567',
+  })
+  @IsString()
+  @IsOptional()
+  slackWorkspaceId?: string;
 }
