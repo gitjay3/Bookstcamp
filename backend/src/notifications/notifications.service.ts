@@ -82,6 +82,7 @@ export class NotificationsService {
 
     // [New] Validating Slack ID and getting DM Channel ID
     const dmChannelId = await this.slackService.getDmChannelId(
+      event.organizationId,
       camperOrg.slackMemberId,
     );
     if (!dmChannelId) {
@@ -100,6 +101,7 @@ export class NotificationsService {
     // 5. 기존 Slack 예약 삭제 (있다면)
     if (existing?.scheduledMessageId) {
       await this.slackService.deleteScheduledMessage(
+        event.organizationId,
         dmChannelId, // Use resolved DM Channel ID
         existing.scheduledMessageId,
       );
@@ -111,6 +113,7 @@ export class NotificationsService {
 
     const message = `[알림] <${reservationUrl}|'${event.title}'> 예약이 ${notificationTime}분 뒤에 시작됩니다! ⏳`;
     const scheduledMessageId = await this.slackService.scheduleReminder(
+      event.organizationId,
       dmChannelId, // Use resolved DM Channel ID
       Math.floor(alertTime.getTime() / 1000),
       message,
@@ -166,10 +169,12 @@ export class NotificationsService {
       if (camperOrg?.slackMemberId) {
         // [New] Resolve DM Channel ID for deletion too
         const dmChannelId = await this.slackService.getDmChannelId(
+          notification.event.organizationId,
           camperOrg.slackMemberId,
         );
         if (dmChannelId) {
           await this.slackService.deleteScheduledMessage(
+            notification.event.organizationId,
             dmChannelId,
             notification.scheduledMessageId,
           );
