@@ -79,6 +79,7 @@ export const createPrismaMock = () => ({
     update: jest.fn(),
     upsert: jest.fn(),
     delete: jest.fn(),
+    deleteMany: jest.fn(),
   },
   adminInvitation: {
     findFirst: jest.fn(),

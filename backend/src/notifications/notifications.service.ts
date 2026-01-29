@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { SlackService } from '../slack/slack.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -84,6 +85,7 @@ export class NotificationsService {
 
     // [New] Validating Slack ID and getting DM Channel ID
     const dmChannelId = await this.slackService.getDmChannelId(
+      event.organizationId,
       camperOrg.slackMemberId,
     );
     if (!dmChannelId) {
@@ -102,6 +104,7 @@ export class NotificationsService {
     // 5. 기존 Slack 예약 삭제 (있다면)
     if (existing?.scheduledMessageId) {
       await this.slackService.deleteScheduledMessage(
+        event.organizationId,
         dmChannelId, // Use resolved DM Channel ID
         existing.scheduledMessageId,
       );
@@ -113,6 +116,7 @@ export class NotificationsService {
 
     const message = `[알림] <${reservationUrl}|'${event.title}'> 예약이 ${notificationTime}분 뒤에 시작됩니다! ⏳`;
     const scheduledMessageId = await this.slackService.scheduleReminder(
+      event.organizationId,
       dmChannelId, // Use resolved DM Channel ID
       Math.floor(alertTime.getTime() / 1000),
       message,
@@ -168,10 +172,12 @@ export class NotificationsService {
       if (camperOrg?.slackMemberId) {
         // [New] Resolve DM Channel ID for deletion too
         const dmChannelId = await this.slackService.getDmChannelId(
+          notification.event.organizationId,
           camperOrg.slackMemberId,
         );
         if (dmChannelId) {
           await this.slackService.deleteScheduledMessage(
+            notification.event.organizationId,
             dmChannelId,
             notification.scheduledMessageId,
           );
@@ -187,5 +193,36 @@ export class NotificationsService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * 종료된지 24시간이 지난 이벤트의 알림 데이터를 주기적으로 삭제합니다.
+   * 매일 자정(00:00)에 실행됩니다.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async handleCleanupOldNotifications() {
+    this.logger.log('Starting cleanup of old notifications...');
+
+    const threshold = new Date();
+    threshold.setHours(threshold.getHours() - 24);
+
+    try {
+      const { count } = await this.prisma.eventNotification.deleteMany({
+        where: {
+          event: {
+            endTime: {
+              lt: threshold,
+            },
+          },
+        },
+      });
+
+      this.logger.log(
+        `Cleanup finished. Removed ${count} old notification records.`,
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error('Failed to cleanup old notifications', errorMessage);
+    }
   }
 }

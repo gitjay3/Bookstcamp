@@ -45,7 +45,7 @@ function ManageOrganization() {
     setModal({ type: 'closed' });
   };
 
-  const handleSave = async (data: { name: string }) => {
+  const handleSave = async (data: { name: string; slackBotToken?: string }) => {
     if (modal.type !== 'form') return;
 
     try {

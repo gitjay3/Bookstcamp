@@ -364,6 +364,50 @@ async function main() {
     tenMinutesLater.toLocaleString(),
   );
 
+  // 4-6. DB 정리(TTL) 테스트용 이벤트 (이미 24시간 전에 종료됨)
+  const expiredEndTime = new Date();
+  expiredEndTime.setHours(expiredEndTime.getHours() - 25);
+  const expiredStartTime = new Date(expiredEndTime.getTime() - 60 * 60 * 1000);
+
+  const event6 = await prisma.event.upsert({
+    where: { id: 6 },
+    update: {
+      startTime: expiredStartTime,
+      endTime: expiredEndTime,
+    },
+    create: {
+      id: 6,
+      title: '[TEST] DB 정리 테스트용 만료된 이벤트',
+      description: '종료된지 24시간이 지나 삭제 대상이 되는 이벤트입니다.',
+      track: Track.COMMON,
+      applicationUnit: ApplicationUnit.INDIVIDUAL,
+      creatorId: adminUserId,
+      organizationId: organization.id,
+      startTime: expiredStartTime,
+      endTime: expiredEndTime,
+      slotSchema: defaultSlotSchema,
+    },
+  });
+  console.log('✓ 이벤트 6 (DB 정리 테스트) 생성, 종료 시간:', expiredEndTime.toLocaleString());
+
+  // 이벤트 6에 대한 알림 데이터 생성 (삭제 대상)
+  await prisma.eventNotification.upsert({
+    where: {
+      userId_eventId: {
+        userId: testUser.user.id,
+        eventId: 6,
+      },
+    },
+    update: {},
+    create: {
+      userId: testUser.user.id,
+      eventId: 6,
+      notificationTime: 10,
+      scheduledMessageId: 'scheduled-msg-expired',
+    },
+  });
+  console.log('✓ 이벤트 6에 대한 알림 데이터(삭제 대상) 생성 완료');
+
   // ========================================
   // K6 부하 테스트용 이벤트 (ID 100~)
   // ========================================

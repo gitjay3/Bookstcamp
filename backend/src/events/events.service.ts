@@ -25,6 +25,9 @@ interface SlotWithReservations extends EventSlot {
 
 interface EventWithSlotsAndReservations extends Event {
   slots: SlotWithReservations[];
+  organization: {
+    slackBotToken: string | null;
+  };
 }
 
 @Injectable()
@@ -143,7 +146,7 @@ export class EventsService {
   async findAll(track?: string, organizationId?: string) {
     const parsedTrack = this.parseTrack(track);
 
-    return this.prisma.event.findMany({
+    const events = await this.prisma.event.findMany({
       where: {
         AND: [
           parsedTrack && parsedTrack !== Track.COMMON
@@ -161,14 +164,30 @@ export class EventsService {
         applicationUnit: true,
         startTime: true,
         endTime: true,
+        organization: {
+          select: {
+            slackBotToken: true,
+          },
+        },
       },
     });
+
+    return events.map((event) => ({
+      ...event,
+      isSlackEnabled: !!event.organization.slackBotToken,
+      organization: undefined,
+    }));
   }
 
   async findOne(id: number, userId?: string) {
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: {
+        organization: {
+          select: {
+            slackBotToken: true,
+          },
+        },
         slots: {
           include: {
             reservations: {
@@ -214,7 +233,12 @@ export class EventsService {
         )
       : true;
 
-    return { ...eventWithSlots, slots: flattenedSlots, canReserveByTrack };
+    return {
+      ...eventWithSlots,
+      slots: flattenedSlots,
+      canReserveByTrack,
+      isSlackEnabled: !!eventWithSlots.organization.slackBotToken,
+    };
   }
 
   private parseTrack(track?: string): Track | undefined {

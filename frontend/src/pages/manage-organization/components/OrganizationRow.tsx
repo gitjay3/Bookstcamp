@@ -74,6 +74,15 @@ function OrganizationRow({ organization, onEdit }: OrganizationRowProps) {
         </button>
       </td>
 
+      {/* 슬랙 워크스페이스 */}
+      <td className="w-40 px-6 py-4">
+        {organization.slackWorkspaceId ? (
+          <span className="text-neutral-text-primary font-medium">{organization.slackWorkspaceId}</span>
+        ) : (
+          <span className="text-neutral-text-tertiary text-14 italic">연동 안 됨</span>
+        )}
+      </td>
+
       {/* 관리 */}
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-4">
