@@ -13,6 +13,7 @@ import {
   OptimisticLockException,
   SlotNotFoundException,
   DuplicateReservationException,
+  TeamAlreadyReservedException,
 } from '../../common/exceptions/api.exception';
 import { MetricsService } from '../metrics/metrics.service';
 
@@ -34,7 +35,14 @@ export class ReservationsProcessor extends WorkerHost {
       return;
     }
 
-    const { userId, slotId, maxCapacity, stockDeducted } = job.data;
+    const {
+      reservationId,
+      userId,
+      slotId,
+      maxCapacity,
+      stockDeducted,
+      groupNumber,
+    } = job.data;
     const startTime = Date.now();
 
     this.logger.log(
@@ -42,7 +50,7 @@ export class ReservationsProcessor extends WorkerHost {
     );
 
     try {
-      await this.processReservation(userId, slotId);
+      await this.processReservation(reservationId, userId, slotId, groupNumber);
       this.logger.log(`예약 확정: userId=${userId}, slotId=${slotId}`);
 
       // 성공 메트릭
@@ -55,6 +63,13 @@ export class ReservationsProcessor extends WorkerHost {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`예약 실패: ${message}`);
+
+      // PENDING 레코드를 CANCELLED로 변경
+      const { reservationId } = job.data;
+      await this.prisma.reservation.update({
+        where: { id: reservationId },
+        data: { status: 'CANCELLED' },
+      });
 
       // 실패 메트릭
       this.metricsService.recordQueueJobComplete(
@@ -79,8 +94,10 @@ export class ReservationsProcessor extends WorkerHost {
   }
 
   private async processReservation(
+    reservationId: number,
     userId: string,
     slotId: number,
+    groupNumber: number | null,
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       // 슬롯(정원) 조회
@@ -89,17 +106,32 @@ export class ReservationsProcessor extends WorkerHost {
       });
       if (!slot) throw new SlotNotFoundException();
 
-      // 중복 예약 확인
-      const existing = await tx.reservation.findFirst({
-        where: {
-          userId,
-          slotId,
-          status: { in: ['PENDING', 'CONFIRMED'] },
-        },
-        select: { id: true, status: true },
-      });
-
-      if (existing) throw new DuplicateReservationException();
+      // 중복 예약 확인 (현재 처리 중인 예약은 제외)
+      if (groupNumber) {
+        // 팀 단위
+        const existingTeam = await tx.reservation.findFirst({
+          where: {
+            slotId,
+            groupNumber,
+            status: { in: ['PENDING', 'CONFIRMED'] },
+            id: { not: reservationId },
+          },
+          select: { id: true },
+        });
+        if (existingTeam) throw new TeamAlreadyReservedException();
+      } else {
+        // 개인 단위
+        const existing = await tx.reservation.findFirst({
+          where: {
+            userId,
+            slotId,
+            status: { in: ['PENDING', 'CONFIRMED'] },
+            id: { not: reservationId },
+          },
+          select: { id: true },
+        });
+        if (existing) throw new DuplicateReservationException();
+      }
 
       // 낙관적 락으로 슬롯 업데이트
       const updated = await tx.eventSlot.updateMany({
@@ -131,13 +163,10 @@ export class ReservationsProcessor extends WorkerHost {
         throw new OptimisticLockException();
       }
 
-      // 예약 생성
-      await tx.reservation.create({
-        data: {
-          userId,
-          slotId,
-          status: 'CONFIRMED',
-        },
+      // 예약 업데이트
+      await tx.reservation.update({
+        where: { id: reservationId },
+        data: { status: 'CONFIRMED' },
       });
     });
   }

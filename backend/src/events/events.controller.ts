@@ -113,8 +113,11 @@ export class EventsController {
     status: 200,
     description: '이벤트 상세 조회 성공',
   })
-  findOne(@Param('id') id: number) {
-    return this.eventsService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.eventsService.findOne(id, userId);
   }
 
   @Patch(':id')

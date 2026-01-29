@@ -33,15 +33,15 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "${POSTGRES_CPU_LIMIT:-0.5}"
-          memory: ${POSTGRES_MEMORY_LIMIT:-512M}
+          cpus: "${POSTGRES_CPU_LIMIT:-1}"
+          memory: ${POSTGRES_MEMORY_LIMIT:-1024M}
         reservations:
-          cpus: "${POSTGRES_CPU_RESERVATION:-0.25}"
-          memory: ${POSTGRES_MEMORY_RESERVATION:-256M}
+          cpus: "${POSTGRES_CPU_RESERVATION:-0.5}"
+          memory: ${POSTGRES_MEMORY_RESERVATION:-512M}
 
   # Nginx 리버스 프록시
   nginx:
-    image: nginx:alpine
+    image: nginx:1.28.1-alpine
     container_name: bookstcamp-nginx
     restart: unless-stopped
     ports:
@@ -77,7 +77,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: bookstcamp-backend
+    # container_name 제거 - 롤링 업데이트를 위해 여러 인스턴스 허용
     restart: unless-stopped
     environment:
       - NODE_ENV=${NODE_ENV}
@@ -91,8 +91,16 @@ services:
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
       - GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
-    ports:
-      - "3001:3001"
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+    # ports 대신 expose 사용 - 호스트 포트 충돌 방지
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD-SHELL", "test ! -f /tmp/drain && wget -q -O /dev/null http://127.0.0.1:3001/api/metrics || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     depends_on:
       - redis
     networks:
@@ -116,10 +124,16 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    container_name: bookstcamp-frontend
+    # container_name 제거 - 롤링 업데이트를 위해 여러 인스턴스 허용
     restart: unless-stopped
     expose:
       - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "test ! -f /tmp/drain && wget -q -O /dev/null http://127.0.0.1:8080 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     networks:
       - bookstcamp-network
     deploy:
@@ -174,7 +188,7 @@ services:
         max-file: "${LOG_MAX_FILE}"
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.5.1
     container_name: bookstcamp-prometheus
     restart: unless-stopped
     profiles:
@@ -184,6 +198,7 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.console.libraries=/etc/prometheus/console_libraries"
       - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-remote-write-receiver"
     ports:
       - "${PROMETHEUS_PORT}:9090"
     volumes:
@@ -198,7 +213,7 @@ services:
         max-file: "${LOG_MAX_FILE}"
 
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.9.0
     container_name: bookstcamp-node-exporter
     restart: unless-stopped
     profiles:
@@ -218,7 +233,7 @@ services:
         max-file: "${LOG_MAX_FILE}"
 
   redis-exporter:
-    image: oliver006/redis_exporter:latest
+    image: oliver006/redis_exporter:v1.75.0
     container_name: bookstcamp-redis-exporter
     restart: unless-stopped
     environment:
@@ -237,7 +252,7 @@ services:
         max-file: "${LOG_MAX_FILE}"
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.3.1
     container_name: bookstcamp-grafana
     restart: unless-stopped
     profiles:
@@ -245,6 +260,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_SECURITY_CONTENT_SECURITY_POLICY: "true"
       GF_INSTALL_PLUGINS: ""
     ports:
       - "${GRAFANA_PORT}:3000"

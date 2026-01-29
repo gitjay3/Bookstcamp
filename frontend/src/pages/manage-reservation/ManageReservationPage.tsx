@@ -7,6 +7,7 @@ import cn from '@/utils/cn';
 import type { Track, ApplicationUnit, SlotSchemaField } from '@/types/event';
 import { getMyReservations, cancelReservation } from '@/api/reservation';
 import type { ReservationApiResponse } from '@/types/BEapi';
+import { getFieldPriority } from '@/constants/slot-field';
 
 type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 type ViewMode = 'grid' | 'ticket';
@@ -51,6 +52,7 @@ function getOrderedExtraInfo(
 
   return slotSchema.fields
     .filter((field) => extraInfo[field.id] !== undefined)
+    .sort((a, b) => getFieldPriority(a.id) - getFieldPriority(b.id))
     .map((field) => ({
       label: field.name,
       value: extraInfo[field.id],
@@ -365,7 +367,7 @@ function ReservationTicket({ reservation, onCancelClick }: ReservationTicketProp
   );
 }
 
-function CamperMyPage() {
+function ManageReservationPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('ticket');
   const [reservations, setReservations] = useState<MyReservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -433,7 +435,7 @@ function CamperMyPage() {
     return (
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-4">
-          <h1 className="text-36 font-extrabold text-gray-900">마이페이지</h1>
+          <h1 className="text-36 font-extrabold text-gray-900">예약 관리</h1>
           <p className="text-16 text-gray-500">예약 목록을 불러오는 중...</p>
         </div>
       </div>
@@ -444,7 +446,7 @@ function CamperMyPage() {
     return (
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-4">
-          <h1 className="text-36 font-extrabold text-gray-900">마이페이지</h1>
+          <h1 className="text-36 font-extrabold text-gray-900">예약 관리</h1>
           <p className="text-16 text-error-500">{error}</p>
         </div>
       </div>
@@ -454,7 +456,7 @@ function CamperMyPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <h1 className="text-36 font-extrabold text-gray-900">마이페이지</h1>
+        <h1 className="text-36 font-extrabold text-gray-900">예약 관리</h1>
         <div className="flex items-center justify-between">
           <p className="text-16 text-gray-500">
             신청한 이벤트 내역을 확인하고 예약을 관리하세요.
@@ -563,4 +565,4 @@ function CamperMyPage() {
   );
 }
 
-export default CamperMyPage;
+export default ManageReservationPage;

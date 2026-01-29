@@ -6,6 +6,7 @@ import { Track, Event, EventSlot } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { toPrismaJson } from 'src/common/utils/to-json';
+import { isUserEligibleForTrack } from '../../common/utils/track.util';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 type EventWithSlots = Event & { slots: EventSlot[] };
@@ -24,6 +25,9 @@ interface SlotWithReservations extends EventSlot {
 
 interface EventWithSlotsAndReservations extends Event {
   slots: SlotWithReservations[];
+  organization: {
+    slackBotToken: string | null;
+  };
 }
 
 @Injectable()
@@ -142,7 +146,7 @@ export class EventsService {
   async findAll(track?: string, organizationId?: string) {
     const parsedTrack = this.parseTrack(track);
 
-    return this.prisma.event.findMany({
+    const events = await this.prisma.event.findMany({
       where: {
         AND: [
           parsedTrack && parsedTrack !== Track.COMMON
@@ -160,14 +164,30 @@ export class EventsService {
         applicationUnit: true,
         startTime: true,
         endTime: true,
+        organization: {
+          select: {
+            slackBotToken: true,
+          },
+        },
       },
     });
+
+    return events.map((event) => ({
+      ...event,
+      isSlackEnabled: !!event.organization.slackBotToken,
+      organization: undefined,
+    }));
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userId?: string) {
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: {
+        organization: {
+          select: {
+            slackBotToken: true,
+          },
+        },
         slots: {
           include: {
             reservations: {
@@ -203,7 +223,22 @@ export class EventsService {
       }),
     );
 
-    return { ...eventWithSlots, slots: flattenedSlots };
+    // 트랙 예약 가능 여부 확인
+    const canReserveByTrack = userId
+      ? await isUserEligibleForTrack(
+          this.prisma,
+          userId,
+          event.track,
+          event.organizationId,
+        )
+      : true;
+
+    return {
+      ...eventWithSlots,
+      slots: flattenedSlots,
+      canReserveByTrack,
+      isSlackEnabled: !!eventWithSlots.organization.slackBotToken,
+    };
   }
 
   private parseTrack(track?: string): Track | undefined {

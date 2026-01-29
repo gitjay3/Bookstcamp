@@ -4,7 +4,7 @@ import Layout from './Layout';
 import Main from './pages/main/Main';
 import EventDetail from './pages/event-detail/EventDetail';
 import ManageTemplate from './pages/manage-template/ManageTemplate';
-import CamperMyPage from './pages/camper-mypage/CamperMyPage';
+import ManageReservationPage from './pages/manage-reservation/ManageReservationPage';
 import LoginPage from './pages/auth/LoginPage';
 import RootProviders from './RootProvider';
 import ProtectedRoute from './ProtectedRoute';
@@ -12,6 +12,9 @@ import SelectOrgPage from './pages/auth/select-org/SelectOrgPage';
 import OrgLayout from './OrgLayout';
 import EventCreatePage from './pages/events/create/EventCreatePage';
 import ManageCamper from './pages/manage-camper/ManageCamper';
+import ManageOrganization from './pages/manage-organization/ManageOrganization';
+import CamperMyPage from './pages/mypage/CamperMyPage';
+import ManageAdmin from './pages/manage-admin/ManageAdmin';
 
 const router = createBrowserRouter([
   {
@@ -34,12 +37,15 @@ const router = createBrowserRouter([
                   { path: 'events/:id', element: <EventDetail /> },
                   { path: 'events/:eventId/edit', element: <EventCreatePage /> },
                   { path: 'events/new', element: <EventCreatePage /> },
+                  { path: 'reservations', element: <ManageReservationPage /> },
                   { path: 'me', element: <CamperMyPage /> },
                   {
                     element: <ProtectedRoute allowedRoles={['ADMIN']} />,
                     children: [
                       { path: 'templates', element: <ManageTemplate /> },
                       { path: 'campers', element: <ManageCamper /> },
+                      { path: 'organizations', element: <ManageOrganization /> },
+                      { path: 'admins', element: <ManageAdmin /> },
                     ],
                   },
                 ],

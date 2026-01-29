@@ -4,8 +4,16 @@ import api from './api';
 export interface Organization {
   id: string;
   name: string;
-  createdAt: string;
-  updatedAt: string;
+  camperCount?: number;
+  eventCount?: number;
+  isSlackEnabled?: boolean;
+  slackWorkspaceId?: string | null;
+}
+
+export interface CreateOrganizationDto {
+  name: string;
+  slackWorkspaceId?: string;
+  slackBotToken?: string;
 }
 
 export async function getOrganization(id: string): Promise<Organization> {
@@ -15,6 +23,19 @@ export async function getOrganization(id: string): Promise<Organization> {
 
 export async function getMyOrganizations(): Promise<Organization[]> {
   const { data } = await api.get<Organization[]>('/organizations/me');
+  return data;
+}
+
+export async function createOrganization(dto: CreateOrganizationDto): Promise<Organization> {
+  const { data } = await api.post<Organization>('/organizations', dto);
+  return data;
+}
+
+export async function updateOrganization(
+  id: string,
+  dto: Partial<CreateOrganizationDto>,
+): Promise<Organization> {
+  const { data } = await api.patch<Organization>(`/organizations/${id}`, dto);
   return data;
 }
 
@@ -57,4 +78,31 @@ export async function uploadCampers(orgId: string, formData: FormData): Promise<
       'Content-Type': 'multipart/form-data',
     },
   });
+}
+
+export interface CamperProfile {
+  camperId: string | null;
+  name?: string;
+  username?: string;
+  track?: Camper['track'];
+  groupNumber?: number | null;
+  slackMemberId: string | null;
+  profileUrl: string | null;
+  isSlackEnabled: boolean;
+}
+
+export async function getMyCamperProfile(orgId: string): Promise<CamperProfile> {
+  const { data } = await api.get<CamperProfile>(`/organizations/${orgId}/campers/me`);
+  return data;
+}
+
+export async function updateMyCamperProfile(
+  orgId: string,
+  dto: { slackMemberId: string },
+): Promise<CamperProfile> {
+  const { data } = await api.patch<CamperProfile>(
+    `/organizations/${orgId}/campers/me`,
+    dto,
+  );
+  return data;
 }

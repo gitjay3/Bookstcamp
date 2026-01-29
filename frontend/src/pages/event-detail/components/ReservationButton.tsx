@@ -3,6 +3,15 @@ import { toast } from 'sonner';
 import { createReservation, cancelReservation } from '@/api/reservation';
 import cn from '@/utils/cn';
 import type { ReservationApiResponse } from '@/types/BEapi';
+import type { Track } from '@/types/event';
+
+const TRACK_LABEL: Record<Track, string> = {
+  ALL: '전체',
+  COMMON: '공통',
+  WEB: 'Web',
+  IOS: 'iOS',
+  ANDROID: 'Android',
+};
 
 interface ReservationButtonProps {
   eventId: number;
@@ -11,6 +20,8 @@ interface ReservationButtonProps {
   myReservation: ReservationApiResponse | null;
   onReservationSuccess: () => void;
   onCancelSuccess: () => void;
+  canReserveByTrack?: boolean;
+  eventTrack: Track;
 }
 
 function ReservationButton({
@@ -20,6 +31,8 @@ function ReservationButton({
   myReservation,
   onReservationSuccess,
   onCancelSuccess,
+  canReserveByTrack = true,
+  eventTrack,
 }: ReservationButtonProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const hasReservation = Boolean(myReservation);
@@ -69,23 +82,28 @@ function ReservationButton({
 
   const handleClick = hasReservation ? handleCancel : handleReservation;
 
+  // 트랙 불일치 여부
+  const isTrackMismatch = !canReserveByTrack && eventTrack !== 'COMMON';
+
   let buttonText;
   if (isSubmitting) {
-    buttonText = hasReservation ? '취소 중...' : '예약 중...'; // TODO: 나중에 지연 보고 삭제 가능
+    buttonText = hasReservation ? '취소 중...' : '예약 중...';
   } else if (hasReservation) {
     buttonText = '예약 취소';
+  } else if (isTrackMismatch) {
+    buttonText = `${TRACK_LABEL[eventTrack]} 전용`;
   } else if (isReservable) {
     buttonText = '예약하기';
   } else {
     buttonText = '예약 기간이 아닙니다';
   }
 
-  // 예약 취소는 항상, 신청은 슬롯 확인 후
-  const disabled = hasReservation ? false : selectedSlotId === null;
-  const isClickable = hasReservation || (isReservable && !disabled);
+  // 예약 취소는 항상, 신청은 슬롯 확인 후 + 트랙 일치 필요
+  const disabled = hasReservation ? false : selectedSlotId === null || isTrackMismatch;
+  const isClickable = hasReservation || (isReservable && !disabled && !isTrackMismatch);
 
   return (
-    <div className="border-neutral-border-default fixed right-0 bottom-0 left-0 flex justify-center border-t bg-white py-4">
+    <div className="border-neutral-border-default fixed right-0 bottom-0 left-0 flex flex-col items-center gap-1 border-t bg-white py-4">
       <button
         type="button"
         onClick={handleClick}
@@ -93,14 +111,20 @@ function ReservationButton({
         className={cn(
           'bg-brand-surface-default h-12 w-200 cursor-pointer rounded-lg font-bold text-white transition',
           hasReservation && 'bg-error-500 hover:bg-error-600',
-          disabled && !hasReservation && 'bg-brand-surface-disabled cursor-not-allowed',
+          (disabled || isTrackMismatch) && !hasReservation && 'bg-brand-surface-disabled cursor-not-allowed',
           !isReservable &&
             !hasReservation &&
+            !isTrackMismatch &&
             'bg-neutral-surface-default text-neutral-text-tertiary cursor-not-allowed',
         )}
       >
         {buttonText}
       </button>
+      {isTrackMismatch && !hasReservation && (
+        <p className="text-12 text-gray-500">
+          이 이벤트는 {TRACK_LABEL[eventTrack]} 캠퍼만 예약할 수 있습니다
+        </p>
+      )}
     </div>
   );
 }

@@ -1,5 +1,11 @@
-import type { EventSlot, SlotSchema, SlotSchemaField, Status } from '@/types/event';
+import type {
+  EventSlot,
+  SlotSchema,
+  Status,
+  ApplicationUnit,
+} from '@/types/event';
 import type { ReservationApiResponse } from '@/types/BEapi';
+import { sortSlotFields } from '@/constants/slot-field';
 import Slot from './Slot';
 
 interface SlotListProps {
@@ -7,6 +13,7 @@ interface SlotListProps {
   slotSchema: SlotSchema;
   slots: EventSlot[];
   selectedSlotId: number | null;
+  applicationUnit: ApplicationUnit;
   setSelectedSlotId: React.Dispatch<React.SetStateAction<number | null>>;
   myReservation: ReservationApiResponse | null;
   disabled?: boolean;
@@ -16,29 +23,6 @@ interface SlotListProps {
   onAddSlot?: () => void;
 }
 
-// 필드 표시 순서 정의 (id 기반)
-const FIELD_ORDER = [
-  'content',      // 내용
-  'date',         // 날짜 (대체 id)
-  'eventDate',    // 날짜
-  'startTime',    // 시작 시간
-  'endTime',      // 종료 시간
-  'location',     // 장소
-  'place',        // 장소 (대체 id)
-  'mentorName',   // 멘토명
-];
-
-function sortFields(fields: SlotSchemaField[]): SlotSchemaField[] {
-  return [...fields].sort((a, b) => {
-    const indexA = FIELD_ORDER.indexOf(a.id);
-    const indexB = FIELD_ORDER.indexOf(b.id);
-    // FIELD_ORDER에 없는 필드는 뒤로 배치
-    const orderA = indexA === -1 ? FIELD_ORDER.length : indexA;
-    const orderB = indexB === -1 ? FIELD_ORDER.length : indexB;
-    return orderA - orderB;
-  });
-}
-
 function SlotList({
   status,
   slotSchema,
@@ -46,13 +30,14 @@ function SlotList({
   selectedSlotId,
   setSelectedSlotId,
   myReservation,
+  applicationUnit,
   disabled = false,
   isAdmin = false,
   onEditSlot,
   onDeleteSlot,
   onAddSlot,
 }: SlotListProps) {
-  const fields = sortFields(slotSchema.fields ?? []);
+  const fields = sortSlotFields(slotSchema.fields ?? []);
 
   // 마스터 그리드 설정: 내용에 맞추되 전체 너비를 고려하여 밸런스 조정
   const gridLayout = {
@@ -76,26 +61,24 @@ function SlotList({
       </div>
 
       {/* 그리드 레이아웃 */}
-      <div
-        className="grid w-full gap-y-3"
-        style={gridLayout}
-      >
+      <div className="grid w-full gap-y-3" style={gridLayout}>
         {/* 헤더 */}
         <div
-          className="grid col-span-full items-center gap-x-4 px-6 py-4"
+          className="col-span-full grid items-center gap-x-4 px-6 py-4"
           style={{ gridTemplateColumns: 'subgrid' }}
         >
           {fields.map((field) => (
-            <span key={field.id} className="text-14 font-semibold text-neutral-text-secondary text-left">
+            <span
+              key={field.id}
+              className="text-14 text-neutral-text-secondary text-left font-semibold"
+            >
               {field.name}
             </span>
           ))}
-          <span className="text-14 font-semibold text-neutral-text-secondary text-left">
+          <span className="text-14 text-neutral-text-secondary text-left font-semibold">
             예약자
           </span>
-          <span className="text-14 font-semibold text-neutral-text-secondary text-left">
-            상태
-          </span>
+          <span className="text-14 text-neutral-text-secondary text-left font-semibold">상태</span>
           <span /> {/* 액션 컬럼용 빈 헤더 */}
         </div>
 
@@ -109,6 +92,7 @@ function SlotList({
             selectedSlotId={selectedSlotId}
             setSelectedSlotId={setSelectedSlotId}
             myReservation={myReservation}
+            applicationUnit={applicationUnit}
             isAdmin={isAdmin}
             onEdit={onEditSlot}
             onDelete={onDeleteSlot}

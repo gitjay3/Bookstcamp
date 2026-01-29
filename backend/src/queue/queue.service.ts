@@ -5,12 +5,16 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { CleanupJobData, QUEUE_CLEANUP_QUEUE } from './queue.constants';
 import { MetricsService } from '../metrics/metrics.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { ForbiddenTrackException } from '../../common/exceptions/api.exception';
+import { isUserEligibleForTrack } from '../../common/utils/track.util';
 
 @Injectable()
 export class QueueService {
   constructor(
     private readonly redisService: RedisService,
     private readonly metricsService: MetricsService,
+    private readonly prisma: PrismaService,
     @InjectQueue(QUEUE_CLEANUP_QUEUE)
     private cleanupQueue: Queue<CleanupJobData>,
   ) {}
@@ -20,6 +24,7 @@ export class QueueService {
   private readonly USER_STATUS_TTL = 60;
   private readonly TOKEN_TTL = 300; // 토큰 유효
   private readonly BATCH_SIZE = 100; // 동시 처리 가능 인원
+  private readonly MAX_TOKEN_RETRY = 3; // 토큰 발급 최대 재시도 횟수
 
   private getQueueKey(eventId: number): string {
     return `event:${eventId}:queue`;
@@ -43,6 +48,9 @@ export class QueueService {
     userId: string,
     sessionId: string,
   ): Promise<{ position: number; isNew: boolean }> {
+    // 트랙 검증
+    await this.validateTrackOrThrow(eventId, userId);
+
     const client = this.redisService.getClient();
     const queueKey = this.getQueueKey(eventId);
     const statusKey = this.getUserStatusKey(eventId, userId);
@@ -157,15 +165,15 @@ export class QueueService {
   }
 
   // 토큰 발급
-  async issueToken(eventId: number, userId: string): Promise<string> {
+  async issueToken(
+    eventId: number,
+    userId: string,
+    retryCount = 0,
+  ): Promise<string> {
     const client = this.redisService.getClient();
     const tokenKey = this.getTokenKey(eventId, userId);
     const queueKey = this.getQueueKey(eventId);
     const heartbeatKey = this.getHeartbeatKey(eventId);
-
-    // 이미 토큰이 있는지 확인
-    const existing = await client.get(tokenKey);
-    if (existing) return existing;
 
     // 새 토큰 생성
     const token = randomUUID();
@@ -179,23 +187,31 @@ export class QueueService {
       'NX',
     );
 
-    if (setResult !== 'OK') {
-      const t = await client.get(tokenKey);
-      if (t) return t;
-      await client.set(tokenKey, token, 'EX', this.TOKEN_TTL);
+    if (setResult === 'OK') {
+      // 최초 발급 성공 → 대기열에서 제거
+      await client.zrem(queueKey, userId);
+      await client.zrem(heartbeatKey, userId);
+
+      this.metricsService.recordTokenIssued(eventId);
+      const totalWaiting = await client.zcard(queueKey);
+      this.metricsService.updateQueueStatus(eventId, totalWaiting);
+
+      return token;
     }
 
-    await client.zrem(queueKey, userId);
-    await client.zrem(heartbeatKey, userId);
+    // SET NX 실패 → 이미 토큰이 있음 → 기존 토큰 반환
+    const existingToken = await client.get(tokenKey);
+    if (existingToken) {
+      return existingToken;
+    }
 
-    // 메트릭: 토큰 발급
-    this.metricsService.recordTokenIssued(eventId);
-
-    // 대기열 인원 업데이트
-    const totalWaiting = await client.zcard(queueKey);
-    this.metricsService.updateQueueStatus(eventId, totalWaiting);
-
-    return token;
+    // 토큰이 그 사이에 만료됨 → 재시도 (최대 횟수 제한)
+    if (retryCount >= this.MAX_TOKEN_RETRY) {
+      throw new Error(
+        `토큰 발급 실패: 최대 재시도 횟수(${this.MAX_TOKEN_RETRY}) 초과`,
+      );
+    }
+    return this.issueToken(eventId, userId, retryCount + 1);
   }
 
   async hasValidToken(eventId: number, userId: string): Promise<boolean> {
@@ -241,5 +257,28 @@ export class QueueService {
 
     await pipeline.exec();
     return expiredUserIds.length;
+  }
+
+  // 트랙 검증: COMMON이 아닌 이벤트는 해당 트랙 캠퍼만 진입 가능
+  private async validateTrackOrThrow(
+    eventId: number,
+    userId: string,
+  ): Promise<void> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { track: true, organizationId: true },
+    });
+
+    if (!event) return;
+
+    const eligible = await isUserEligibleForTrack(
+      this.prisma,
+      userId,
+      event.track,
+      event.organizationId,
+    );
+    if (!eligible) {
+      throw new ForbiddenTrackException();
+    }
   }
 }

@@ -14,13 +14,16 @@ function Layout() {
 
   const camperNav: NavItem[] = [
     { label: '이벤트 예약', to: `/orgs/${orgId}` },
+    { label: '예약 관리', to: `/orgs/${orgId}/reservations` },
     { label: '마이페이지', to: `/orgs/${orgId}/me` },
   ];
 
   const adminNav: NavItem[] = [
     { label: '이벤트 관리', to: `/orgs/${orgId}` },
+    { label: '조직 관리', to: `/orgs/${orgId}/organizations` },
     { label: '캠퍼 관리', to: `/orgs/${orgId}/campers` },
     { label: '템플릿 관리', to: `/orgs/${orgId}/templates` },
+    { label: '운영진 관리', to: `/orgs/${orgId}/admins` },
   ];
 
   const navItems = role === 'USER' ? camperNav : adminNav;

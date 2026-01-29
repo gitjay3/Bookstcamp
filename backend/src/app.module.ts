@@ -16,12 +16,17 @@ import { TemplatesModule } from './templates/templates.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { MetricsModule } from './metrics/metrics.module';
+import { AdminModule } from './admin/admin.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { SlackModule } from './slack/slack.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     PrometheusModule.register({
       defaultMetrics: {
         enabled: true,
@@ -49,6 +54,9 @@ import { MetricsModule } from './metrics/metrics.module';
     QueueModule,
     TemplatesModule,
     OrganizationsModule,
+    SlackModule,
+    NotificationsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
