@@ -10,6 +10,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
 import { ReservationStatus } from '@prisma/client';
+import Redis from 'ioredis';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -720,6 +721,43 @@ async function main() {
   await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"EventSlot"', 'id'), coalesce(max(id), 1)) FROM "EventSlot"`;
 
   console.log('✓ 슬롯 데이터 생성 완료');
+
+  // 6-1. Redis 재고 초기화 (Docker 환경에서만 동작)
+  const redisHost = process.env.REDIS_HOST || 'localhost';
+  const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
+  const redisPassword = process.env.REDIS_PASSWORD;
+
+  try {
+    const redis = new Redis({
+      host: redisHost,
+      port: redisPort,
+      password: redisPassword,
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => {
+        if (times > 3) return null;
+        return Math.min(times * 100, 1000);
+      },
+    });
+
+    await Promise.race([
+      new Promise<void>((resolve) => redis.on('ready', resolve)),
+      new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error('Redis 연결 타임아웃')), 3000),
+      ),
+    ]);
+
+    console.log('🔄 Redis 재고 초기화 중...');
+    for (const slot of slots) {
+      const stockKey = `slot:${slot.id}:stock`;
+      const remainingStock = slot.maxCapacity - slot.currentCount;
+      await redis.set(stockKey, remainingStock);
+    }
+    console.log(`✓ ${slots.length}개 슬롯 Redis 재고 초기화 완료`);
+
+    await redis.quit();
+  } catch {
+    console.log('⚠️  Redis 연결 실패 - 재고 초기화 건너뜀 (Backend 시작 시 자동 동기화됨)');
+  }
 
   // 7. 가짜 예약 데이터 생성 (명단 확인용)
   console.log('🌱 가짜 예약 데이터 생성 중...');
