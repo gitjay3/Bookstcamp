@@ -24,6 +24,10 @@ function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
+    if (window.location.pathname === '/login') {
+      setIsLoading(false);
+      return;
+    }
     fetchUser();
   }, []);
 
