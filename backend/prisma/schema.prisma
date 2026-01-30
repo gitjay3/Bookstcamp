@@ -84,21 +84,10 @@ model Reservation {
   status      ReservationStatus @default(PENDING)
   reservedAt  DateTime          @default(now())
 
-  user              User               @relation(fields: [userId], references: [id])
-  slot              EventSlot          @relation(fields: [slotId], references: [id])
-  reservationOutbox ReservationOutbox?
+  user User      @relation(fields: [userId], references: [id])
+  slot EventSlot @relation(fields: [slotId], references: [id])
 
   @@index([slotId, groupNumber])
-}
-
-model ReservationOutbox {
-  id            Int      @id @default(autoincrement())
-  reservationId Int      @unique
-  payload       Json
-  status        String   @default("PENDING")
-  createdAt     DateTime @default(now())
-
-  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 }
 
 model User {
@@ -144,7 +133,7 @@ model AuthAccount {
 }
 
 model Organization {
-  id               String  @id @default(uuid()) @db.Uuid()
+  id               String   @id @default(uuid()) @db.Uuid()
   name             String
   slackBotToken    String? // 암호화된 슬랙 봇 토큰
   slackWorkspaceId String? // 검증용 슬랙 워크스페이스 ID (T...)
