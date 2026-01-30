@@ -167,6 +167,16 @@ fi
 # 7. 무중단 롤링 업데이트
 log_info "Step 8: 무중단 롤링 업데이트"
 
+# Redis 환경변수 검증 (dotenvx 복호화 확인)
+log_info "Redis 환경변수 검증 중..."
+REDIS_MAX_MEMORY_CHECK=$(dotenvx get REDIS_MAX_MEMORY -f "$ENV_FILE" 2>/dev/null || echo "")
+if [ -z "$REDIS_MAX_MEMORY_CHECK" ]; then
+    log_error "REDIS_MAX_MEMORY 환경변수를 복호화할 수 없습니다."
+    log_error "DOTENV_PRIVATE_KEY_PRODUCTION이 올바르게 설정되었는지 확인하세요."
+    exit 1
+fi
+log_info "Redis 환경변수 검증 완료: REDIS_MAX_MEMORY=$REDIS_MAX_MEMORY_CHECK"
+
 # Redis, Nginx 등 인프라 서비스는 먼저 업데이트 (down 없이)
 log_info "인프라 서비스 업데이트..."
 run_with_env docker compose -f "$COMPOSE_FILE" up -d redis

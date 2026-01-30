@@ -40,6 +40,15 @@ export class AdminService {
         githubUsername: githubUsername.toLowerCase(),
         invitedById: inviterId,
       },
+      include: {
+        inviter: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+          },
+        },
+      },
     });
   }
 
