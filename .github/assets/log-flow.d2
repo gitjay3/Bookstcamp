@@ -1,0 +1,31 @@
+direction: right
+
+frontend: Frontend {
+  shape: rectangle
+}
+
+backend: Backend {
+  shape: rectangle
+}
+
+docker: Docker stdout {
+  shape: cylinder
+}
+
+promtail: Promtail {
+  shape: rectangle
+}
+
+loki: Loki {
+  shape: cylinder
+}
+
+grafana: Grafana {
+  shape: rectangle
+}
+
+frontend -> backend: "1. POST /api/logs/client\n(에러 정보 전송)"
+backend -> docker: "2. pino JSON 로그 출력"
+docker -> promtail: "3. 컨테이너 로그 수집"
+promtail -> loki: "4. 로그 저장 (7일 보관)"
+loki -> grafana: "5. LogQL 쿼리로 조회"
