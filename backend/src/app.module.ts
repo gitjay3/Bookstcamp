@@ -21,12 +21,32 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { SlackModule } from './slack/slack.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OpenTelemetryModule } from 'nestjs-otel';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    // Rate Limiting: 브루트포스 공격 방지
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000, // 1초
+        limit: 5, // 초당 5회
+      },
+      {
+        name: 'medium',
+        ttl: 10000, // 10초
+        limit: 30, // 10초당 30회
+      },
+      {
+        name: 'long',
+        ttl: 60000, // 1분
+        limit: 100, // 분당 100회
+      },
+    ]),
     ScheduleModule.forRoot(),
     OpenTelemetryModule.forRoot({
       metrics: {
@@ -70,6 +90,10 @@ import { OpenTelemetryModule } from 'nestjs-otel';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CustomThrottlerGuard,
     },
   ],
 })
