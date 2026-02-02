@@ -23,11 +23,28 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { OpenTelemetryModule } from 'nestjs-otel';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
+import { LoggerModule } from 'nestjs-pino';
+import { LogsModule } from './logs/logs.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        pinoHttp: {
+          level: configService.get<string>('LOG_LEVEL', 'info'),
+          transport:
+            configService.get<string>('NODE_ENV') !== 'production'
+              ? { target: 'pino-pretty', options: { colorize: true } }
+              : undefined,
+          autoLogging: true,
+          redact: ['req.headers.cookie', 'req.headers.authorization'],
+        },
+      }),
+      inject: [ConfigService],
     }),
     // Rate Limiting: 브루트포스 공격 방지
     ThrottlerModule.forRoot([
@@ -83,6 +100,7 @@ import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
     SlackModule,
     NotificationsModule,
     AdminModule,
+    LogsModule,
   ],
   controllers: [AppController],
   providers: [
