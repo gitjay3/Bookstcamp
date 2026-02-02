@@ -20,6 +20,7 @@ import { AdminModule } from './admin/admin.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SlackModule } from './slack/slack.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { OpenTelemetryModule } from 'nestjs-otel';
 
 @Module({
   imports: [
@@ -27,6 +28,11 @@ import { NotificationsModule } from './notifications/notifications.module';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    OpenTelemetryModule.forRoot({
+      metrics: {
+        hostMetrics: true,
+      },
+    }),
     PrometheusModule.register({
       defaultMetrics: {
         enabled: true,
