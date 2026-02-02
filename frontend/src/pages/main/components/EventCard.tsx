@@ -78,35 +78,35 @@ function EventCard({ event, onDeleted }: EventCardProps) {
   return (
     <>
       <Card>
-        {isAdmin && (
-          <div className="absolute top-3 right-3 z-10">
-            <DropdownMenu items={menuItems} />
-          </div>
-        )}
-        
-        {isUser && isUpcoming && organization?.isSlackEnabled && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setIsNotificationModalOpen(true);
-            }}
-            className="absolute top-3 right-3 z-10 p-1 rounded-full hover:bg-neutral-100 transition-colors"
-          >
-            {hasNotification ? (
-              <BellRingIcon className="h-5 w-5 text-brand-500" />
-            ) : (
-              <BellIcon className="h-5 w-5 text-neutral-text-tertiary" />
-            )}
-          </button>
-        )}
-
         <Link to={`/orgs/${orgId}/events/${id}`} className="flex h-full flex-col justify-between">
           <div className="flex flex-col gap-3">
-            <div className="flex gap-2">
-              <ApplicationUnitLabel applicationUnit={applicationUnit} />
-              <EventCategoryLabel category={track} />
-              <EventStatusLabel status={status} />
+            <div className="flex items-start justify-between">
+              <div className="flex gap-2">
+                <ApplicationUnitLabel applicationUnit={applicationUnit} />
+                <EventCategoryLabel category={track} />
+                <EventStatusLabel status={status} />
+              </div>
+              
+              <div className="flex items-center gap-1">
+                {isAdmin && <DropdownMenu items={menuItems} />}
+                
+                {isUser && isUpcoming && organization?.isSlackEnabled && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsNotificationModalOpen(true);
+                    }}
+                    className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                  >
+                    {hasNotification ? (
+                      <BellRingIcon className="h-5 w-5 text-brand-500" />
+                    ) : (
+                      <BellIcon className="h-5 w-5 text-neutral-text-tertiary" />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="text-20 font-extrabold">{title}</div>
             <div className="text-12 text-neutral-text-secondary">{description}</div>
