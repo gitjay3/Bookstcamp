@@ -136,7 +136,7 @@ export class ReservationsService {
       (Date.now() - startTime) / 1000,
     );
 
-    // 예약 접수 완료 후 토큰 삭제
+    // 예약 성공 시 대기열 토큰 무효화 (토큰 재사용 방지)
     await this.queueService.invalidateToken(slot.event.id, userId);
 
     return {
