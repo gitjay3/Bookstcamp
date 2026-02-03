@@ -131,7 +131,10 @@ if [ -f "$PROJECT_ROOT/.deploy.env" ]; then
     set -a
     source "$PROJECT_ROOT/.deploy.env"
     set +a
-    log_info "DEBUG: DOTENV_PRIVATE_KEY_PRODUCTION 설정됨: $([ -n "$DOTENV_PRIVATE_KEY_PRODUCTION" ] && echo "yes (${#DOTENV_PRIVATE_KEY_PRODUCTION} chars)" || echo "no")"
+    # 환경에 맞는 키 확인
+    local key_name="DOTENV_PRIVATE_KEY_${ENVIRONMENT^^}"
+    local key_value="${!key_name:-}"
+    log_info "DEBUG: $key_name 설정됨: $([ -n "$key_value" ] && echo "yes (${#key_value} chars)" || echo "no")"
 else
     log_warn "DEBUG: .deploy.env 파일 없음!"
 fi
