@@ -219,6 +219,7 @@ services:
     restart: unless-stopped
     profiles:
       - production
+      - staging
     command:
       - "--path.rootfs=/host"
     volumes:
