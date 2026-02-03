@@ -1,3 +1,4 @@
+/* eslint-disable */
 import lighthouse from 'lighthouse';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
