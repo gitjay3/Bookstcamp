@@ -75,7 +75,7 @@ export const options = {
       exec: "queueLoadTest",
     },
   },
-  thresholds: getThresholdsForScenario("queue"),
+  thresholds: getThresholdsForScenario(`queue_${SCENARIO}`),
   summaryTrendStats,
 
   // 응답 파싱 필요 (대기열 상태/토큰 확인)
