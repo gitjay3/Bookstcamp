@@ -104,30 +104,40 @@ export class ReservationsService {
       throw new SlotFullException();
     }
 
-    // PENDING 레코드 먼저 생성
-    const reservation = await this.prisma.reservation.create({
-      data: {
+    // Redis 차감 이후 실패 시 재고를 복구하기 위한 보상 트랜잭션
+    try {
+      const reservation = await this.prisma.reservation.create({
+        data: {
+          userId,
+          slotId: dto.slotId,
+          status: 'PENDING',
+          groupNumber:
+            slot.event.applicationUnit === 'TEAM'
+              ? eligibility.groupNumber
+              : null,
+        },
+      });
+
+      await this.reservationQueue.add(PROCESS_RESERVATION_JOB, {
+        reservationId: reservation.id,
         userId,
         slotId: dto.slotId,
-        status: 'PENDING',
+        eventId: slot.event.id,
+        maxCapacity: slot.maxCapacity,
+        stockDeducted: true,
         groupNumber:
           slot.event.applicationUnit === 'TEAM'
             ? eligibility.groupNumber
             : null,
-      },
-    });
-
-    // Queue에 Job 추가
-    await this.reservationQueue.add(PROCESS_RESERVATION_JOB, {
-      reservationId: reservation.id,
-      userId,
-      slotId: dto.slotId,
-      eventId: slot.event.id,
-      maxCapacity: slot.maxCapacity,
-      stockDeducted: true,
-      groupNumber:
-        slot.event.applicationUnit === 'TEAM' ? eligibility.groupNumber : null,
-    });
+      });
+    } catch (error) {
+      await this.redisService.incrementStock(
+        dto.slotId,
+        slot.maxCapacity,
+        'failure_recovery',
+      );
+      throw error;
+    }
 
     // 메트릭 기록
     this.metricsService.recordReservation(dto.slotId, 'pending');
