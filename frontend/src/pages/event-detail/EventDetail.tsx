@@ -1,14 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router';
 import type { EventDetail as EventDetailType, EventSlot } from '@/types/event';
-import { getEvent } from '@/api/event';
+import { getEvent, getEventPollingStatus } from '@/api/event';
 import cn from '@/utils/cn';
-import {
-  getSlotAvailability,
-  updateEventSlot,
-  deleteEventSlot,
-  createEventSlot,
-} from '@/api/eventSlot';
+import { updateEventSlot, deleteEventSlot, createEventSlot } from '@/api/eventSlot';
 import { getMyReservationForEvent } from '@/api/reservation';
 import type { ReservationApiResponse } from '@/types/BEapi';
 import useQueue from '@/hooks/useQueue';
@@ -67,14 +62,12 @@ function EventDetail() {
     }
   }, [eventId]);
 
-  // 내 예약 조회
   const fetchMyReservation = useCallback(async () => {
     if (!eventId || Number.isNaN(eventId)) return;
 
     try {
       const reservation = await getMyReservationForEvent(eventId);
       setMyReservation((prev) => {
-        // 데이터가 동일하면 참조를 유지하여 리렌더링 방지
         if (JSON.stringify(prev) === JSON.stringify(reservation)) return prev;
         return reservation;
       });
@@ -83,23 +76,23 @@ function EventDetail() {
     }
   }, [eventId]);
 
-  // 실시간 정원 폴링
-  const updateSlotAvailability = useCallback(async () => {
+  // 폴링: 슬롯 정원 + 내 예약
+  const fetchPollingStatus = useCallback(async () => {
     if (!eventId || Number.isNaN(eventId)) return;
 
     try {
-      const availabilityData = await getSlotAvailability(eventId);
+      const { slotAvailability, myReservation: reservation } = await getEventPollingStatus(eventId);
 
+      // 슬롯 정원 업데이트
       setEvent((prevEvent) => {
         if (!prevEvent) return null;
 
         let changed = false;
 
         const nextSlots = prevEvent.slots.map((slot) => {
-          const updated = availabilityData.slots.find((s) => s.slotId === slot.id);
+          const updated = slotAvailability.slots.find((s) => s.slotId === slot.id);
           if (!updated) return slot;
 
-          // 인원수가 변했거나, 예약자 명단(이름 등)이 변한 경우 업데이트
           const isCountChanged = slot.currentCount !== updated.currentCount;
           const isReserverChanged =
             JSON.stringify(slot.reservations) !== JSON.stringify(updated.reservations);
@@ -118,8 +111,14 @@ function EventDetail() {
         if (!changed) return prevEvent;
         return { ...prevEvent, slots: nextSlots };
       });
+
+      // 내 예약 업데이트
+      setMyReservation((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(reservation)) return prev;
+        return reservation;
+      });
     } catch (error) {
-      console.error('실시간 정원 갱신 실패:', error);
+      console.error('폴링 상태 갱신 실패:', error);
     }
   }, [eventId]);
 
@@ -139,21 +138,20 @@ function EventDetail() {
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, []);
 
-  // 실시간 정원 폴링
+  // 실시간 폴링 (슬롯 정원 + 내 예약 통합)
   useEffect(() => {
     if (eventStatus !== 'ONGOING') return () => {};
 
     // 첫 갱신
-    updateSlotAvailability();
+    fetchPollingStatus();
 
     const intervalId = setInterval(() => {
       if (!isPageVisibleRef.current) return;
-      updateSlotAvailability();
-      fetchMyReservation();
+      fetchPollingStatus();
     }, CONFIG.polling.eventDetail);
 
     return () => clearInterval(intervalId);
-  }, [eventStatus, updateSlotAvailability, fetchMyReservation]);
+  }, [eventStatus, fetchPollingStatus]);
 
   const handleReservationSuccess = useCallback(() => {
     setSelectedSlotId(null);
