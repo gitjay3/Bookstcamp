@@ -6,6 +6,7 @@ import Modal from '@/components/Modal';
 import TextInput from '@/components/TextInput';
 import Dropdown from '@/components/Dropdown';
 import Button from '@/components/Button';
+import useIsMobile from '@/hooks/useIsMobile';
 import type { Template, CreateTemplateDto } from '@/types/template';
 import PlusIcon from '@/assets/icons/plus.svg?react';
 import TrashIcon from '@/assets/icons/trash.svg?react';
@@ -48,6 +49,7 @@ interface TemplateFormModalProps {
 function TemplateFormModal({ isOpen, onClose, onSave, template }: TemplateFormModalProps) {
   const titleId = useId();
   const descriptionId = useId();
+  const isMobile = useIsMobile();
 
   const {
     register,
@@ -161,52 +163,52 @@ function TemplateFormModal({ isOpen, onClose, onSave, template }: TemplateFormMo
             </div>
           </div>
 
-          {/* 모바일: 카드 레이아웃 */}
-          <div className="flex flex-col gap-2 sm:hidden">
-            {fields.map((field, index) => (
-              <div
-                key={field.id}
-                className="border-neutral-border-default rounded-lg border bg-white p-3"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-neutral-text-secondary text-13">필드 {index + 1}</span>
-                  <button
-                    type="button"
-                    className={`${
-                      fields.length > 1
-                        ? 'text-neutral-text-tertiary active:text-red-500'
-                        : 'cursor-not-allowed text-gray-300'
-                    }`}
-                    onClick={() => remove(index)}
-                    disabled={fields.length <= 1}
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+          {/* 모바일: 카드 레이아웃 / 데스크톱: 테이블 레이아웃 */}
+          {isMobile ? (
+            <div className="flex flex-col gap-2">
+              {fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="border-neutral-border-default rounded-lg border bg-white p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-neutral-text-secondary text-13">필드 {index + 1}</span>
+                    <button
+                      type="button"
+                      className={`${
+                        fields.length > 1
+                          ? 'text-neutral-text-tertiary active:text-red-500'
+                          : 'cursor-not-allowed text-gray-300'
+                      }`}
+                      onClick={() => remove(index)}
+                      disabled={fields.length <= 1}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <TextInput
+                      placeholder="필드 이름"
+                      /* eslint-disable-next-line react/jsx-props-no-spreading */
+                      {...register(`slotSchema.fields.${index}.name`)}
+                    />
+                    <Controller
+                      name={`slotSchema.fields.${index}.type`}
+                      control={control}
+                      render={({ field: controllerField }) => (
+                        <Dropdown
+                          options={fieldTypeOptions}
+                          value={controllerField.value}
+                          setValue={controllerField.onChange}
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <TextInput
-                    placeholder="필드 이름"
-                    /* eslint-disable-next-line react/jsx-props-no-spreading */
-                    {...register(`slotSchema.fields.${index}.name`)}
-                  />
-                  <Controller
-                    name={`slotSchema.fields.${index}.type`}
-                    control={control}
-                    render={({ field: controllerField }) => (
-                      <Dropdown
-                        options={fieldTypeOptions}
-                        value={controllerField.value}
-                        setValue={controllerField.onChange}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 데스크톱: 테이블 레이아웃 */}
-          <div className="border-neutral-border-default hidden rounded-lg border sm:block">
+              ))}
+            </div>
+          ) : (
+            <div className="border-neutral-border-default rounded-lg border">
             <div className="text-neutral-text-tertiary border-neutral-border-default flex border-b bg-gray-50 text-12">
               <div className="w-12 px-3 py-2 text-center">순서</div>
               <div className="flex-1 px-3 py-2">필드 이름</div>
@@ -259,6 +261,7 @@ function TemplateFormModal({ isOpen, onClose, onSave, template }: TemplateFormMo
               </div>
             ))}
           </div>
+          )}
 
           {errors.slotSchema?.fields && (
             <p className="text-12 mt-1 text-red-500">
