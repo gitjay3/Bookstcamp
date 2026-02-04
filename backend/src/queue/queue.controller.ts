@@ -32,6 +32,8 @@ export class QueueController {
         isNew: result.isNew,
         sessionId,
         totalWaiting: result.totalWaiting,
+        hasToken: result.hasToken,
+        tokenExpiresAt: result.tokenExpiresAt ?? null,
       },
     };
   }

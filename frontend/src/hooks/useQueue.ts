@@ -65,11 +65,11 @@ function useQueue({ eventId, enabled = true }: UseQueueOptions) {
         ...prev,
         position: result.position,
         totalWaiting: result.totalWaiting,
-        hasToken: false,
+        hasToken: result.hasToken,
         inQueue: true,
         isLoading: false,
         isNew: result.isNew,
-        tokenExpiresAt: null,
+        tokenExpiresAt: result.tokenExpiresAt ?? null,
       }));
 
       return result;
