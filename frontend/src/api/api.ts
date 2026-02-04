@@ -14,6 +14,10 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// 429 에러 toast 중복 방지
+let lastRateLimitToastTime = 0;
+const RATE_LIMIT_TOAST_COOLDOWN = 10000; // 10초
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -25,6 +29,18 @@ api.interceptors.response.use(
       if (status === 401 && !window.location.pathname.startsWith('/login')) {
         // TODO: 토큰 재발급
         window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      // 429: Rate Limit 초과
+      if (status === 429) {
+        const now = Date.now();
+        if (now - lastRateLimitToastTime > RATE_LIMIT_TOAST_COOLDOWN) {
+          lastRateLimitToastTime = now;
+          toast.error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', {
+            id: 'rate-limit-error',
+          });
+        }
         return Promise.reject(error);
       }
     } else if (error.code === 'ECONNABORTED') {
