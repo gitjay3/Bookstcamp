@@ -119,9 +119,10 @@ export class ReservationsService {
 
     // Queue에 Job 추가
     await this.reservationQueue.add(PROCESS_RESERVATION_JOB, {
-      reservationId: reservation.id, // 추가
+      reservationId: reservation.id,
       userId,
       slotId: dto.slotId,
+      eventId: slot.event.id,
       maxCapacity: slot.maxCapacity,
       stockDeducted: true,
       groupNumber:
@@ -378,6 +379,7 @@ export class ReservationsService {
         return {
           reservation: updatedReservation,
           slotId: reservation.slotId,
+          eventId: reservation.slot.eventId,
           maxCapacity: reservation.slot.maxCapacity,
         };
       });
@@ -388,6 +390,9 @@ export class ReservationsService {
         result.maxCapacity,
         'cancellation',
       );
+
+      // 예약자 명단 캐시 무효화
+      await this.redisService.invalidateReserversCache(result.eventId);
 
       // 메트릭 기록
       this.metricsService.recordReservation(result.slotId, 'cancelled');

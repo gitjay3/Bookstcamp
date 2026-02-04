@@ -48,13 +48,17 @@ export class EventSlotsService {
   }
 
   async getAvailabilityByEvent(eventId: number) {
+    const cached = await this.redisService.getReserversCache(eventId);
+    if (cached) {
+      return this.enrichWithLiveStock(JSON.parse(cached));
+    }
+
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
       select: {
         applicationUnit: true,
         organizationId: true,
         slots: {
-          // ← 추가
           orderBy: { id: 'asc' },
           include: {
             reservations: {
@@ -126,13 +130,12 @@ export class EventSlotsService {
       }
     }
 
-    return {
+    // 캐시용 데이터 구성
+    const cacheData = {
       applicationUnit: event.applicationUnit,
       slots: slots.map((slot) => ({
         slotId: slot.id,
-        currentCount: slot.currentCount,
-        remainingSeats: Math.max(0, slot.maxCapacity - slot.currentCount),
-        isAvailable: slot.currentCount < slot.maxCapacity,
+        maxCapacity: slot.maxCapacity,
         reservations: slot.reservations.map((r) => ({
           name: r.user.name || r.user.username,
           username: r.user.username,
@@ -144,6 +147,42 @@ export class EventSlotsService {
               : undefined,
         })),
       })),
+    };
+
+    // Redis에 캐시 저장
+    await this.redisService.setReserversCache(
+      eventId,
+      JSON.stringify(cacheData),
+    );
+
+    return this.enrichWithLiveStock(cacheData);
+  }
+
+  private async enrichWithLiveStock(cacheData: {
+    applicationUnit: string;
+    slots: Array<{
+      slotId: number;
+      maxCapacity: number;
+      reservations: unknown[];
+    }>;
+  }) {
+    const stocks = await Promise.all(
+      cacheData.slots.map((slot) => this.redisService.getStock(slot.slotId)),
+    );
+
+    return {
+      applicationUnit: cacheData.applicationUnit,
+      slots: cacheData.slots.map((slot, i) => {
+        const remainingSeats = Math.max(0, stocks[i]);
+        const currentCount = Math.max(0, slot.maxCapacity - stocks[i]);
+        return {
+          slotId: slot.slotId,
+          currentCount,
+          remainingSeats,
+          isAvailable: remainingSeats > 0,
+          reservations: slot.reservations,
+        };
+      }),
       timestamp: new Date().toISOString(),
     };
   }
@@ -221,6 +260,9 @@ export class EventSlotsService {
       );
     }
 
+    // 슬롯 정보 변경 시 캐시 무효화
+    await this.redisService.invalidateReserversCache(slot.eventId);
+
     return updatedSlot;
   }
 
@@ -238,7 +280,12 @@ export class EventSlotsService {
       throw new BadRequestException('예약이 있는 슬롯은 삭제할 수 없습니다.');
     }
 
-    return this.prisma.eventSlot.delete({ where: { id } });
+    const deleted = await this.prisma.eventSlot.delete({ where: { id } });
+
+    // 슬롯 삭제 시 캐시 무효화
+    await this.redisService.invalidateReserversCache(slot.eventId);
+
+    return deleted;
   }
 
   async create(dto: CreateEventSlotDto) {
@@ -261,6 +308,9 @@ export class EventSlotsService {
 
     // Redis 재고 초기화
     await this.redisService.initStock(slot.id, slot.maxCapacity, 0);
+
+    // 슬롯 추가 시 캐시 무효화
+    await this.redisService.invalidateReserversCache(dto.eventId);
 
     return slot;
   }
