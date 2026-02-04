@@ -3,7 +3,11 @@ import { RedisService } from '../redis/redis.service';
 import { randomUUID } from 'crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { CleanupJobData, QUEUE_CLEANUP_QUEUE } from './queue.constants';
+import {
+  CleanupJobData,
+  QUEUE_CLEANUP_QUEUE,
+  ACTIVE_EVENTS_KEY,
+} from './queue.constants';
 import { MetricsService } from '../metrics/metrics.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForbiddenTrackException } from '../../common/exceptions/api.exception';
@@ -22,7 +26,7 @@ export class QueueService {
     private readonly redisService: RedisService,
     private readonly metricsService: MetricsService,
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService, // 추가
+    private readonly configService: ConfigService,
     @InjectQueue(QUEUE_CLEANUP_QUEUE)
     private cleanupQueue: Queue<CleanupJobData>,
   ) {
@@ -67,7 +71,11 @@ export class QueueService {
     eventId: number,
     userId: string,
     sessionId: string,
-  ): Promise<{ position: number; isNew: boolean }> {
+  ): Promise<{
+    position: number;
+    isNew: boolean;
+    totalWaiting: number;
+  }> {
     // 트랙 검증
     await this.validateTrackOrThrow(eventId, userId);
 
@@ -101,18 +109,22 @@ export class QueueService {
         // 메트릭: 재진입
         this.metricsService.recordQueueEntry(eventId, false);
 
+        const totalWaiting = await client.zcard(queueKey);
         return {
           position: newPosition ?? 0,
           isNew: false,
+          totalWaiting,
         };
       }
 
       // 메트릭: 기존 사용자 재진입
       this.metricsService.recordQueueEntry(eventId, false);
 
+      const totalWaiting = await client.zcard(queueKey);
       return {
         position: position ?? 0,
         isNew: false,
+        totalWaiting,
       };
     }
 
@@ -127,6 +139,9 @@ export class QueueService {
     // heartbeat 기록
     await client.zadd(heartbeatKey, now, userId);
 
+    // 활성 이벤트 등록
+    await this.registerActiveEvent(eventId);
+
     const position = await client.zrank(queueKey, userId);
 
     // 메트릭: 신규 사용자 진입
@@ -139,6 +154,7 @@ export class QueueService {
     return {
       position: position ?? 0,
       isNew: true,
+      totalWaiting,
     };
   }
 
@@ -306,7 +322,30 @@ export class QueueService {
     }
 
     await pipeline.exec();
+
+    // 대기열이 비었으면 활성 이벤트에서 제거
+    const remainingUsers = await client.zcard(queueKey);
+    if (remainingUsers === 0) {
+      await this.unregisterActiveEvent(eventId);
+    }
+
     return expiredUserIds.length;
+  }
+
+  async registerActiveEvent(eventId: number): Promise<void> {
+    const client = this.redisService.getClient();
+    await client.sadd(ACTIVE_EVENTS_KEY, String(eventId));
+  }
+
+  async unregisterActiveEvent(eventId: number): Promise<void> {
+    const client = this.redisService.getClient();
+    await client.srem(ACTIVE_EVENTS_KEY, String(eventId));
+  }
+
+  async getActiveEventIds(): Promise<number[]> {
+    const client = this.redisService.getClient();
+    const eventIds = await client.smembers(ACTIVE_EVENTS_KEY);
+    return eventIds.map((id) => parseInt(id, 10));
   }
 
   // 트랙 검증: COMMON이 아닌 이벤트는 해당 트랙 캠퍼만 진입 가능
