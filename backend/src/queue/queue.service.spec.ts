@@ -32,6 +32,9 @@ const createRedisMock = () => {
     set: jest.fn(),
     del: jest.fn(),
     ttl: jest.fn(),
+    sadd: jest.fn(),
+    srem: jest.fn(),
+    smembers: jest.fn(),
     pipeline: jest.fn().mockReturnValue(pipelineMock),
   };
 
@@ -118,7 +121,7 @@ describe('QueueService', () => {
 
       const result = await service.enterQueue(eventId, userId, sessionId);
 
-      expect(result).toEqual({ position: 5, isNew: true });
+      expect(result).toEqual({ position: 5, isNew: true, totalWaiting: 10 });
       expect(pipelineMock.zadd).toHaveBeenCalled();
       expect(pipelineMock.hset).toHaveBeenCalledWith(
         expect.stringContaining('status'),
@@ -132,10 +135,11 @@ describe('QueueService', () => {
       const { clientMock } = redisMock;
       clientMock.hget.mockResolvedValue('old-session'); // 기존 세션 있음
       clientMock.zrank.mockResolvedValue(3);
+      clientMock.zcard.mockResolvedValue(5);
 
       const result = await service.enterQueue(eventId, userId, sessionId);
 
-      expect(result).toEqual({ position: 3, isNew: false });
+      expect(result).toEqual({ position: 3, isNew: false, totalWaiting: 5 });
       expect(metricsMock.recordQueueEntry).toHaveBeenCalledWith(eventId, false);
     });
 
