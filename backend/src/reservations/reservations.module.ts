@@ -24,5 +24,6 @@ import { QueueModule } from '../queue/queue.module';
   ],
   controllers: [ReservationsController],
   providers: [ReservationsService, ReservationsProcessor],
+  exports: [ReservationsService],
 })
 export class ReservationsModule {}

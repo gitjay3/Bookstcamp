@@ -118,3 +118,9 @@ export interface ApiErrorResponse {
   statusCode: number;
   error?: string;
 }
+
+export interface EventPollingStatusResponse {
+  slotAvailability: SlotAvailabilityApiResponse;
+  myReservation: ReservationApiResponse | null;
+  timestamp: string;
+}
