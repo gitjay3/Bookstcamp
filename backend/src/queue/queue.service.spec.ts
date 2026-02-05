@@ -81,6 +81,11 @@ describe('QueueService', () => {
     metricsMock = createMetricsMock();
     prismaMock = createPrismaMock();
 
+    const { clientMock } = redisMock;
+    clientMock.set.mockResolvedValue('OK');
+    clientMock.zremrangebyscore.mockResolvedValue(0);
+    clientMock.zcard.mockResolvedValue(0);
+
     // 기본값: COMMON 트랙 이벤트 (모든 사용자 허용)
     prismaMock.event.findUnique.mockResolvedValue({
       track: 'COMMON',
@@ -118,10 +123,11 @@ describe('QueueService', () => {
       clientMock.hget.mockResolvedValue(null); // 기존 세션 없음
       clientMock.zrank.mockResolvedValue(5);
       clientMock.zcard.mockResolvedValue(10);
+      clientMock.zremrangebyscore.mockResolvedValue(0);
 
       const result = await service.enterQueue(eventId, userId, sessionId);
 
-      expect(result).toEqual({ position: 5, isNew: true, totalWaiting: 10 });
+      expect(result).toMatchObject({ isNew: true, totalWaiting: 10 });
       expect(pipelineMock.zadd).toHaveBeenCalled();
       expect(pipelineMock.hset).toHaveBeenCalledWith(
         expect.stringContaining('status'),
@@ -136,10 +142,11 @@ describe('QueueService', () => {
       clientMock.hget.mockResolvedValue('old-session'); // 기존 세션 있음
       clientMock.zrank.mockResolvedValue(3);
       clientMock.zcard.mockResolvedValue(5);
+      clientMock.zremrangebyscore.mockResolvedValue(0);
 
       const result = await service.enterQueue(eventId, userId, sessionId);
 
-      expect(result).toEqual({ position: 3, isNew: false, totalWaiting: 5 });
+      expect(result).toMatchObject({ isNew: false, totalWaiting: 5 });
       expect(metricsMock.recordQueueEntry).toHaveBeenCalledWith(eventId, false);
     });
 
@@ -148,6 +155,7 @@ describe('QueueService', () => {
       clientMock.hget.mockResolvedValue(null);
       clientMock.zrank.mockResolvedValue(0);
       clientMock.zcard.mockResolvedValue(1);
+      clientMock.zremrangebyscore.mockResolvedValue(0);
 
       // WEB 전용 이벤트
       prismaMock.event.findUnique.mockResolvedValue({

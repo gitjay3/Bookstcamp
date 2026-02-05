@@ -7,6 +7,10 @@ import { createPrismaMock } from '../test/mocks/prisma.mock';
 
 const createRedisMock = () => ({
   initStock: jest.fn().mockResolvedValue(undefined),
+  getReserversCache: jest.fn().mockResolvedValue(null),
+  setReserversCache: jest.fn().mockResolvedValue(undefined),
+  invalidateReserversCache: jest.fn().mockResolvedValue(undefined),
+  getStock: jest.fn().mockResolvedValue(5),
 });
 
 describe('EventSlotsService', () => {
@@ -102,17 +106,20 @@ describe('EventSlotsService', () => {
   });
 
   describe('getAvailabilityByEvent', () => {
-    it('이벤트의 슬롯 가용성을 반환한다', async () => {
+    it('캐시 MISS 시 DB 조회 후 Redis stock으로 가용성을 반환한다', async () => {
       const mockEvent = {
         applicationUnit: 'INDIVIDUAL',
         organizationId: 1,
         slots: [
-          { id: 1, currentCount: 5, maxCapacity: 10, reservations: [] },
-          { id: 2, currentCount: 10, maxCapacity: 10, reservations: [] },
+          { id: 1, maxCapacity: 10, reservations: [] },
+          { id: 2, maxCapacity: 10, reservations: [] },
         ],
       };
 
       prismaMock.event.findUnique.mockResolvedValue(mockEvent);
+      // slot 1: stock=5 → currentCount=5, remainingSeats=5
+      // slot 2: stock=0 → currentCount=10, remainingSeats=0
+      redisMock.getStock.mockResolvedValueOnce(5).mockResolvedValueOnce(0);
 
       const result = await service.getAvailabilityByEvent(1);
 
@@ -133,6 +140,25 @@ describe('EventSlotsService', () => {
         },
       ]);
       expect(result.timestamp).toBeDefined();
+      expect(redisMock.setReserversCache).toHaveBeenCalledWith(
+        1,
+        expect.any(String),
+      );
+    });
+
+    it('캐시 HIT 시 DB 조회 없이 Redis stock으로 가용성을 반환한다', async () => {
+      const cacheData = {
+        applicationUnit: 'INDIVIDUAL',
+        slots: [{ slotId: 1, maxCapacity: 10, reservations: [] }],
+      };
+      redisMock.getReserversCache.mockResolvedValue(JSON.stringify(cacheData));
+      redisMock.getStock.mockResolvedValueOnce(3);
+
+      const result = await service.getAvailabilityByEvent(1);
+
+      expect(result.slots[0].currentCount).toBe(7);
+      expect(result.slots[0].remainingSeats).toBe(3);
+      expect(prismaMock.event.findUnique).not.toHaveBeenCalled();
     });
 
     it('이벤트가 없으면 NotFoundException을 던진다', async () => {
