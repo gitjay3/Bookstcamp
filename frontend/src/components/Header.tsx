@@ -18,7 +18,7 @@ function Header({ navItems }: HeaderProps) {
       <div className="flex h-full items-center gap-5">
         <Link to={orgId ? `/orgs/${orgId}` : '/'} className="flex gap-2">
           <img className="aspect-square h-6" src="/logo.webp" alt="로고" />
-          <div className="flex items-center gap-2 font-extrabold">
+          <div className="hidden items-center gap-2 font-extrabold sm:flex">
             <span>bookstcamp</span>
             {organization && (
               <>
@@ -30,12 +30,12 @@ function Header({ navItems }: HeaderProps) {
             )}
           </div>
         </Link>
-        <nav className="text-12 flex gap-4">
+        <nav className="text-12 flex min-w-0 gap-2 overflow-x-auto sm:gap-4">
           {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="text-neutral-text-secondary hover:text-neutral-text-primary cursor-pointer transition-colors"
+              className="text-neutral-text-secondary hover:text-neutral-text-primary shrink-0 cursor-pointer transition-colors"
             >
               {item.label}
             </Link>
@@ -49,6 +49,7 @@ function Header({ navItems }: HeaderProps) {
           </span>
           <button
             type="button"
+            aria-label="로그아웃"
             onClick={logout}
             className="text-neutral-text-secondary hover:text-brand-500 hover:bg-neutral-surface-default flex h-8 w-8 items-center justify-center rounded-md transition-colors"
           >

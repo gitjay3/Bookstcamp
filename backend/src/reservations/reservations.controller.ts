@@ -25,6 +25,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { UseGuards } from '@nestjs/common';
 import { QueueTokenGuard } from '../queue/guards/queue-token.guard';
 import { ThrottleReservation } from 'src/common/decorators/throttle.decorator';
+import { CustomThrottlerGuard } from 'src/common/guards/custom-throttler.guard';
 
 @ApiTags('reservations')
 @Controller('reservations')
@@ -32,6 +33,7 @@ export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}
 
   @Post()
+  @UseGuards(CustomThrottlerGuard)
   @ThrottleReservation()
   @ApiOperation({
     summary: '예약 신청',

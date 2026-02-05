@@ -72,9 +72,11 @@ export class QueueService {
     userId: string,
     sessionId: string,
   ): Promise<{
-    position: number;
+    position: number | null;
     isNew: boolean;
     totalWaiting: number;
+    hasToken: boolean;
+    tokenExpiresAt?: number;
   }> {
     // 트랙 검증
     await this.validateTrackOrThrow(eventId, userId);
@@ -106,22 +108,26 @@ export class QueueService {
         this.metricsService.recordQueueEntry(eventId, false);
 
         const totalWaiting = await client.zcard(queueKey);
-        return {
-          position: newPosition ?? 0,
-          isNew: false,
+        return this.buildEnterQueueResponse(
+          eventId,
+          userId,
+          newPosition ?? 0,
+          false,
           totalWaiting,
-        };
+        );
       }
 
       // 메트릭: 기존 사용자 재진입
       this.metricsService.recordQueueEntry(eventId, false);
 
       const totalWaiting = await client.zcard(queueKey);
-      return {
-        position: position ?? 0,
-        isNew: false,
+      return this.buildEnterQueueResponse(
+        eventId,
+        userId,
+        position ?? 0,
+        false,
         totalWaiting,
-      };
+      );
     }
 
     const pipeline = client.pipeline();
@@ -144,10 +150,45 @@ export class QueueService {
     const totalWaiting = await client.zcard(queueKey);
     this.metricsService.updateQueueStatus(eventId, totalWaiting);
 
-    return {
-      position: position ?? 0,
-      isNew: true,
+    return this.buildEnterQueueResponse(
+      eventId,
+      userId,
+      position ?? 0,
+      true,
       totalWaiting,
+    );
+  }
+
+  private async buildEnterQueueResponse(
+    eventId: number,
+    userId: string,
+    position: number,
+    isNew: boolean,
+    totalWaiting: number,
+  ): Promise<{
+    position: number | null;
+    isNew: boolean;
+    totalWaiting: number;
+    hasToken: boolean;
+    tokenExpiresAt?: number;
+  }> {
+    const activeTokenCount = await this.getActiveTokenCount(eventId);
+    if (activeTokenCount < this.BATCH_SIZE) {
+      await this.issueToken(eventId, userId);
+      return {
+        position: null,
+        isNew,
+        totalWaiting,
+        hasToken: true,
+        tokenExpiresAt: Date.now() + this.TOKEN_TTL * 1000,
+      };
+    }
+
+    return {
+      position,
+      isNew,
+      totalWaiting,
+      hasToken: false,
     };
   }
 

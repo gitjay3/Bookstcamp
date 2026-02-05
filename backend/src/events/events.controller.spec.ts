@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
 import { EventSlotsService } from '../event-slots/event-slots.service';
+import { ReservationsService } from '../reservations/reservations.service';
 import { Track, ApplicationUnit } from '@prisma/client';
 
 const createEventsServiceMock = () => ({
@@ -14,22 +15,30 @@ const createEventsServiceMock = () => ({
 
 const createEventSlotsServiceMock = () => ({
   findByEventWithAvailability: jest.fn(),
+  getAvailabilityByEvent: jest.fn(),
+});
+
+const createReservationsServiceMock = () => ({
+  findByUserAndEvent: jest.fn(),
 });
 
 describe('EventsController', () => {
   let controller: EventsController;
   let eventsServiceMock: ReturnType<typeof createEventsServiceMock>;
   let eventSlotsServiceMock: ReturnType<typeof createEventSlotsServiceMock>;
+  let reservationsServiceMock: ReturnType<typeof createReservationsServiceMock>;
 
   beforeEach(async () => {
     eventsServiceMock = createEventsServiceMock();
     eventSlotsServiceMock = createEventSlotsServiceMock();
+    reservationsServiceMock = createReservationsServiceMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EventsController],
       providers: [
         { provide: EventsService, useValue: eventsServiceMock },
         { provide: EventSlotsService, useValue: eventSlotsServiceMock },
+        { provide: ReservationsService, useValue: reservationsServiceMock },
       ],
     }).compile();
 
