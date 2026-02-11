@@ -18,7 +18,6 @@
 
 - GitHub Actions CI/CD + Docker 롤링 업데이트 무중단 배포 ([#80](https://github.com/boostcampwm2025/web20-bibimbap/pull/80), [#196](https://github.com/boostcampwm2025/web20-bibimbap/pull/196))
 - Terraform으로 NCP 인프라 + 모니터링 서버 구성 (Prometheus, Grafana) ([#178](https://github.com/boostcampwm2025/web20-bibimbap/pull/178))
-- Grafana Loki 로그 수집 + nestjs-pino 구조화 로깅 + 프론트엔드 에러 로그 수집 ([#214](https://github.com/boostcampwm2025/web20-bibimbap/pull/214))
 - k6 부하 테스트 환경 구축 및 병목 발견 ([#190](https://github.com/boostcampwm2025/web20-bibimbap/pull/190))
 - 도메인(SSL) 적용, 스테이징 서버 구성 ([#117](https://github.com/boostcampwm2025/web20-bibimbap/pull/117), [#219](https://github.com/boostcampwm2025/web20-bibimbap/pull/219))
 - Vitest + Jest 테스트 환경 구축, CI 통합 ([#109](https://github.com/boostcampwm2025/web20-bibimbap/pull/109))
