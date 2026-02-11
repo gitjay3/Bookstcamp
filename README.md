@@ -18,18 +18,22 @@
 
 - GitHub Actions CI/CD + Docker 롤링 업데이트 무중단 배포 ([#80](https://github.com/boostcampwm2025/web20-bibimbap/pull/80), [#196](https://github.com/boostcampwm2025/web20-bibimbap/pull/196))
 - Terraform으로 NCP 인프라 + 모니터링 서버 구성 (Prometheus, Grafana) ([#178](https://github.com/boostcampwm2025/web20-bibimbap/pull/178))
-- k6 부하 테스트 환경 구축 및 병목 발견 ([#190](https://github.com/boostcampwm2025/web20-bibimbap/pull/190), [#224](https://github.com/boostcampwm2025/web20-bibimbap/pull/224))
+- Grafana Loki 로그 수집 + nestjs-pino 구조화 로깅 + 프론트엔드 에러 로그 수집 ([#214](https://github.com/boostcampwm2025/web20-bibimbap/pull/214))
+- k6 부하 테스트 환경 구축 및 병목 발견 ([#190](https://github.com/boostcampwm2025/web20-bibimbap/pull/190))
 - 도메인(SSL) 적용, 스테이징 서버 구성 ([#117](https://github.com/boostcampwm2025/web20-bibimbap/pull/117), [#219](https://github.com/boostcampwm2025/web20-bibimbap/pull/219))
+- Vitest + Jest 테스트 환경 구축, CI 통합 ([#109](https://github.com/boostcampwm2025/web20-bibimbap/pull/109))
 
 ### 백엔드
 
+- 이벤트 목록 조회 API + FE/BE 연결, 필터링 ([#26](https://github.com/boostcampwm2025/web20-bibimbap/pull/26))
 - 이벤트 템플릿 CRUD API ([#160](https://github.com/boostcampwm2025/web20-bibimbap/pull/160))
-- 유저 ID 기반 Rate Limiting ([#214](https://github.com/boostcampwm2025/web20-bibimbap/pull/214), [#238](https://github.com/boostcampwm2025/web20-bibimbap/pull/238))
-- SSH Brute Force 보안 대응 ([#214](https://github.com/boostcampwm2025/web20-bibimbap/pull/214))
+- Rate Limiting: IP 기반에서 유저 ID 기반으로 전환, 엔드포인트별 적용 ([#214](https://github.com/boostcampwm2025/web20-bibimbap/pull/214), [#224](https://github.com/boostcampwm2025/web20-bibimbap/pull/224), [#238](https://github.com/boostcampwm2025/web20-bibimbap/pull/238))
+- SSH Brute Force 보안 대응 (서버 운영)
 
 ### 프론트엔드
 
-- 예약 목록/상세, 마이페이지, 운영진 템플릿 관리 UI ([#98](https://github.com/boostcampwm2025/web20-bibimbap/pull/98), [#127](https://github.com/boostcampwm2025/web20-bibimbap/pull/127), [#164](https://github.com/boostcampwm2025/web20-bibimbap/pull/164))
+- 이벤트 목록 UI ([#25](https://github.com/boostcampwm2025/web20-bibimbap/pull/25))
+- 예약 상세, 마이페이지, 운영진 템플릿 관리 UI ([#98](https://github.com/boostcampwm2025/web20-bibimbap/pull/98), [#127](https://github.com/boostcampwm2025/web20-bibimbap/pull/127), [#164](https://github.com/boostcampwm2025/web20-bibimbap/pull/164))
 - 브라우저 호환성 + 모바일 반응형 ([#230](https://github.com/boostcampwm2025/web20-bibimbap/pull/230))
 
 <br>
@@ -105,8 +109,6 @@ for old in $old_containers; do
 done
 ```
 
----
-
 <br>
 
 ### 2. 모니터링 구성 및 부하 테스트
@@ -163,15 +165,11 @@ k6로 성공/정원초과/중복/서버에러를 구분하는 커스텀 메트�
 
 <br>
 
----
-
 ### 3. SSH Brute Force 공격 탐지 및 대응
 
 운영 중 NCP Basic Security 알림으로 두 서버에 각각 1,700~1,800회의 SSH 로그인 시도가 감지되었습니다. 로그를 분석한 결과 여러 해외 IP에서 root, admin, ethereum 같은 계정명으로 무차별 대입 공격이 들어오고 있었습니다.
 
 원인은 Terraform ACG 설정에서 SSH 22번 포트를 `0.0.0.0/0`으로 열어둔 것과 비밀번호 인증이 활성화되어 있던 점이었습니다. 즉시 SSH Key 인증만 허용하도록 변경하고, fail2ban으로 반복 실패 IP를 자동 차단하도록 설정했습니다. 침해 여부를 조사한 결과 비밀번호 로그인 성공 기록은 없었고, 모든 접속이 SSH Key를 통한 것으로 확인되었습니다.
-
----
 
 <br>
 
