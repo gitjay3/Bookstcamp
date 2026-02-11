@@ -251,21 +251,3 @@ private getTrackerWithContext(req: RequestWithUser, context: ExecutionContext): 
   }
 }
 ```
-
-<br>
-
-## 설치 및 실행
-
-> Node.js 18+, pnpm 8+, Docker 필요
-
-```bash
-git clone https://github.com/boostcampwm2025/web20-bibimbap
-cd web20-bibimbap
-pnpm install
-pnpm docker:local:up
-pnpm db:generate:local
-pnpm db:seed:local
-```
-
-- 로컬 확인: http://localhost
-- API 문서(Swagger): http://localhost/api-docs
